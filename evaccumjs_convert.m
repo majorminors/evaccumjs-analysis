@@ -60,6 +60,16 @@ for subject = 1:length(t.alldata) % loop through each subject
     
     t.id = t.this_subj_data{1}.unique_id; % since we generated unique ids we'll pull these in
     
+    % lets get a code for button press
+    t.button_condition = t.this_subj_data{1}.condition;
+    % condition 1 : respkeys o,p
+    % condition 2 : respkeys p,o
+    % keypress is JS, so 79 is o and 80 is p
+    if t.button_condition{2} == 1
+        t.keycode = [79,80];
+    elseif t.button_condition{2} == 2
+        t.keycode = [80,79];
+    end
     % data is all in a row, so we go through each col and pull the values we want
     t.coh_count = 0;
     t.rule_count = 0;
@@ -99,7 +109,11 @@ for subject = 1:length(t.alldata) % loop through each subject
                 t.coh_count = t.coh_count+1;
                 
                 t.coh.rt(t.coh_count) = t.current_trial.rt;
-                t.coh.button(t.coh_count) = t.current_trial.key_press;
+                if isempty(find(t.current_trial.key_press == t.keycode))
+                    t.coh.button(t.coh_count) = -1;
+                else
+                    t.coh.button(t.coh_count) = find(t.current_trial.key_press == t.keycode);
+                end
                 t.coh.correct(t.coh_count) = t.current_trial.correct;
                 t.coh.direction(t.coh_count) = t.current_trial.coherent_direction;
                 
@@ -108,7 +122,11 @@ for subject = 1:length(t.alldata) % loop through each subject
                 t.rule_count = t.rule_count+1;
                 
                 t.rule.rt(t.rule_count) = t.current_trial.rt;
-                t.rule.button(t.rule_count) = t.current_trial.key_press;
+                if isempty(find(t.current_trial.key_press == t.keycode))
+                    t.rule.button(t.rule_count) = -1;
+                else
+                    t.rule.button(t.rule_count) = find(t.current_trial.key_press == t.keycode);
+                end
                 t.rule.correct(t.rule_count) = t.current_trial.correct;
                 t.rule.direction(t.rule_count) = t.current_trial.coherent_direction;
                 
@@ -117,7 +135,11 @@ for subject = 1:length(t.alldata) % loop through each subject
                 t.exp_count = t.exp_count+1;
                 
                 t.exp.rt(t.exp_count) = t.current_trial.rt;
-                t.exp.button(t.exp_count) = t.current_trial.key_press;
+                if isempty(find(t.current_trial.key_press == t.keycode))
+                    t.exp.button(t.exp_count) = -1;
+                else
+                    t.exp.button(t.exp_count) = find(t.current_trial.key_press == t.keycode);
+                end
                 t.exp.correct(t.exp_count) = t.current_trial.correct;
                 t.exp.direction(t.exp_count) = t.current_trial.coherent_direction;
                 

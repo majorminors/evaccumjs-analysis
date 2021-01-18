@@ -36,7 +36,7 @@ toolsdir = fullfile(rootdir, 'lib','lba'); % where are all your scripts/tools?
 
 p.save_name = 'Model_%s.mat';
 p.rng_seed = 19; % the rng seed number - fixed for reproducibility
-t.local = 1; % run locally? Or 0 will use cbu scheduler
+t.local = 0; % run locally? Or 0 will use cbu scheduler
 
 % test vars
 p.testing = 0; % if you want to use testing data, then switch to 1 and add the data folder to the path, else to 0. will save to pwd/test_results/

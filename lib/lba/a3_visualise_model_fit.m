@@ -10,12 +10,12 @@ d = struct(); % set up a structure for the data info
 t = struct(); % set up a structure for temp data
 
 % set up variables
-rootdir = '\\cbsu\data\Group\Woolgar-Lab\projects\Dorian\EvAccum'; % 'C:\Users\doria\Nextcloud\desiderata\desiderata\04 Research\05 Evidence Accumulation\01 EvAccum Code'; % % root directory - used to inform directory mappings
+rootdir = '/group/woolgar-lab/projects/Dorian/evaccum/evaccumjs-analysis'; % 'C:\Users\doria\Nextcloud\desiderata\desiderata\04 Research\05 Evidence Accumulation\01 EvAccum Code'; % % root directory - used to inform directory mappings
 
-datadir = fullfile(rootdir,'data','behav_pilot_2');
+datadir = fullfile(rootdir,'data','behav_1');
 
-modeldir = fullfile(datadir,'lba_fit','results'); % expects to find your modelling results here
-toolsdir = fullfile(rootdir, 'tools_analysis'); % where are all your scripts/tools?
+modeldir = fullfile(datadir,'lba_results'); % expects to find your modelling results here
+toolsdir = fullfile(rootdir, 'lib'); % where are all your scripts/tools?
 
 p.datafilepattern =  'Model_*.mat';
 %p.savefilename = '';
@@ -26,34 +26,36 @@ addpath(genpath(toolsdir)); % add tools folder to path (don't think we need this
 
 %% run the data2fit analysis again
 
-lbadatadir = fullfile(datadir,'lba_fit'); % expects to find your data here and will save results in a sub-folder here
-p.data_name = 'prepped_data.mat'; % data file name
+lbadatadir = fullfile(datadir); % expects to find your data here and will save results in a sub-folder here
+p.data_name = 'processed_data.mat'; % data file name
 
 t.fileinfo = dir(fullfile(lbadatadir,p.data_name));
 t.datapath = fullfile(lbadatadir,t.fileinfo.name);
 
 % get the data
 t.alldata = load(t.datapath);
-t.data = t.alldata.d.subjects;
+t.data = t.alldata.d.lbadata;
 
-num_subjs = sum(~cellfun('isempty',{t.data.id})); % get the number of not empty arrays from the first field of the 'data' structure
+num_subjs = length(t.data);%sum(~cellfun('isempty',{data.id})); % get the number of not empty arrays from the first field of the 'data' structure
+
 %initialise cells
-d.data2fit={};
+data2fit={};
 
 for idxsubj = 1:num_subjs
-    fprintf('loading subject %1.0f \n',t.data(idxsubj).id);
+    clear rt conds resp acc % clear vars from behavioural data to avoid reading mixed subject data
+    fprintf('loading subject %1.0f of %1.0f \n',idxsubj,num_subjs);
     
     % pull the data
-    subjdata = t.data(idxsubj).data; % put the data in a readable variable
+    subjdata = t.data{idxsubj}; % put the data in a readable variable
     dataValid = []; % now we'll strip invalid responses out
     validLabs = {};
     for i = 1:size(subjdata,1)
-        if subjdata{i,5} >= 0 % if there's a valid response
+        if subjdata{i,4} >= 0 % if there's a valid response
             dataValid(end+1,:) = [subjdata{i,2} subjdata{i,3} subjdata{i,4} subjdata{i,5}]; % add the following rows to this new variable in order: condition code, response, rt, accuracy
             temp = subjdata{i,1}; % extract valid condition label (can't do in one step with multi-level structures and non-scalar indexing)
             validLabs{end+1} = temp; % add the valid condition label
         end
-    end; clear i temp subjdata;
+    end; clear i temp;
     
     % converting again to readable variables
     conds = dataValid(:,1);
@@ -89,7 +91,7 @@ end; clear idxsubj;
 %% get model data
 
 d.fileinfo = dir(fullfile(modeldir, p.datafilepattern)); % find all the datafiles and get their info
-for i = 1%:length(d.fileinfo) % loop through each
+for i = 1:length(d.fileinfo) % loop through each
     t.path = fullfile(modeldir, d.fileinfo(i).name);% get the full path to the file
     fprintf(1, 'working with %s\n', t.path); % print that so you can check
     
