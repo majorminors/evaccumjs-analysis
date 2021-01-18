@@ -1,7 +1,6 @@
 %% prep data for input to LBA fitting
 % Dorian Minors
-% Created: FEB20
-% Last Edit: FEB20
+% Created: JAN21
 %
 % 
 % you specify your datadir and it will save prepped data into datadir\lba_fit
@@ -35,8 +34,8 @@ d = struct(); % set up a structure for the data info
 t = struct(); % set up a structure for temp data
 
 % set up variables
-rootdir = 'C:\Users\doria\Nextcloud\desiderata\desiderata\04 Research\05 Evidence Accumulation\01 EvAccum Code'; %'\\cbsu\data\Group\Woolgar-Lab\projects\Dorian\EvAccum'; %% root directory - used to inform directory mappings
-datadir = fullfile(rootdir,'data','behav_pilot_2');
+rootdir = '/group/woolgar-lab/projects/Dorian/evaccum/evaccumjs'; %% root directory - used to inform directory mappings
+datadir = fullfile(rootdir,'data','behav_1');
 p.datafilepattern = '*_EvAccum.mat';
 p.savefilename = 'prepped_data';
 p.notesfilename = [p.savefilename,'_notes.txt'];

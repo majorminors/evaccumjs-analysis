@@ -3,6 +3,9 @@ function [f_error, BIC, pmod_LL,pmod_HL, pmod_LH,pmod_HH,priorMod_HA,qobs] = fit
 % param [boundary, X0 range, drift 1, drift 2, drift 3, drift 4, drift std,
 % T0, theta,alpha] 
 
+% L: low uncertainty (easy)
+% H: high uncertainty (hard)
+
 if length(data2fit)==4
     goalstat_LL=data2fit{1};
     goalstat_HL=data2fit{2};

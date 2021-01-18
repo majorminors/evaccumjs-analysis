@@ -16,14 +16,14 @@ t = struct(); % set up a structure for temp data
 
 % set up variables
 rootdir = pwd; %% root directory - used to inform directory mappings
-datadir = fullfile(rootdir,'data/behav_1');
-p.savefilename = 'processed_data';
-p.datafilepattern = 'jatos_results_*';
+datadir = fullfile(rootdir,'data/behav_1'); % location of data
+p.savefilename = 'processed_data'; % savefile for all data
+p.datafilepattern = 'jatos_results_*'; % file pattern of input data
 
 % directory mapping
 addpath(genpath(fullfile(rootdir, 'lib'))); % add libraries to path
 
-save_file = fullfile(datadir, p.savefilename);
+p.save_file = fullfile(datadir, p.savefilename);
 
 %% loop through subjects
 d.fileinfo = dir(fullfile(datadir, p.datafilepattern)); % find all the datafiles and get their info
@@ -54,7 +54,7 @@ end
 d.alldata = t.alldata; % save all the data
 
 for subject = 1:length(t.alldata) % loop through each subject
-    fprintf(1, 'working with subject %f of %f\n', subject, length(t.alldata)); % print that so you can check
+    fprintf(1, 'working with subject %1.0f of %1.0f\n', subject, length(t.alldata)); % print that so you can check
     
     t.this_subj_data = t.alldata{subject};
     
@@ -99,6 +99,7 @@ for subject = 1:length(t.alldata) % loop through each subject
                 t.coh_count = t.coh_count+1;
                 
                 t.coh.rt(t.coh_count) = t.current_trial.rt;
+                t.coh.button(t.coh_count) = t.current_trial.key_press;
                 t.coh.correct(t.coh_count) = t.current_trial.correct;
                 t.coh.direction(t.coh_count) = t.current_trial.coherent_direction;
                 
@@ -107,6 +108,7 @@ for subject = 1:length(t.alldata) % loop through each subject
                 t.rule_count = t.rule_count+1;
                 
                 t.rule.rt(t.rule_count) = t.current_trial.rt;
+                t.rule.button(t.rule_count) = t.current_trial.key_press;
                 t.rule.correct(t.rule_count) = t.current_trial.correct;
                 t.rule.direction(t.rule_count) = t.current_trial.coherent_direction;
                 
@@ -115,6 +117,7 @@ for subject = 1:length(t.alldata) % loop through each subject
                 t.exp_count = t.exp_count+1;
                 
                 t.exp.rt(t.exp_count) = t.current_trial.rt;
+                t.exp.button(t.exp_count) = t.current_trial.key_press;
                 t.exp.correct(t.exp_count) = t.current_trial.correct;
                 t.exp.direction(t.exp_count) = t.current_trial.coherent_direction;
                 
@@ -152,10 +155,70 @@ for subject = 1:length(t.alldata) % loop through each subject
     disp('num fast responses')
     disp(length(find(d.subjects(subject).exp.rt >=0 & d.subjects(subject).exp.rt < 500)))
     
-end % end subject loop
+    t.prompt = 'Continue to process for LBA fit with this participant? y/n [y]: ';
+    t.do_lba = input(t.prompt,'s');
+    if isempty(t.do_lba); t.do_lba = 'y'; end
+    
+    d.subjects(subject).lba = t.do_lba;
+    
+end; clear subject; % end subject loop for initial checking
 
 fprintf('saving output from %s\n', mfilename);
-save(save_file,'d'); % save all data to a .mat file
+save(p.save_file,'d'); % save all data to a .mat file
+
+fprintf('converting selected participants for lba\n');
+
+ilba = 0; % initialise a counter
+p.conditions = {'EcEr','EcHr','HcEr','HcHr'}; % 2x2 coherence and rule
+p.conditioncodes = {1,2,3,4};
+t.lbadata = {}; % init this
+for subject = 1:length(d.subjects) % loop through subjects
+    if d.subjects(subject).lba == 'y' % if subject has been approved for lba
+        
+        ilba = ilba+1;
+        
+        for trial = 1:length(d.subjects(subject).exp.rt)
+            
+            % create a row that gives you a number for each condition in your 2x2
+            if d.subjects(subject).exp.stim_array{1,trial}.coh_difficulty == 1 && d.subjects(subject).exp.stim_array{1,trial}.match_difficulty == 1
+                t.condition(trial,1) = string(p.conditions{1});
+                t.conditioncode(trial,1) = p.conditioncodes{1};
+            elseif d.subjects(subject).exp.stim_array{1,trial}.coh_difficulty == 1 && d.subjects(subject).exp.stim_array{1,trial}.match_difficulty == 2
+                t.condition(trial,1) = string(p.conditions{2});
+                t.conditioncode(trial,1) = p.conditioncodes{2};
+            elseif d.subjects(subject).exp.stim_array{1,trial}.coh_difficulty == 2 && d.subjects(subject).exp.stim_array{1,trial}.match_difficulty == 1
+                t.condition(trial,1) = string(p.conditions{3});
+                t.conditioncode(trial,1) = p.conditioncodes{3};
+            elseif d.subjects(subject).exp.stim_array{1,trial}.coh_difficulty == 2 && d.subjects(subject).exp.stim_array{1,trial}.match_difficulty == 2
+                t.condition(trial,1) = string(p.conditions{4});
+                t.conditioncode(trial,1) = p.conditioncodes{4};
+            end
+            
+            % get trial code
+            t.trialtype(trial,1) = d.subjects(subject).exp.stim_array{1,trial}.trial_cond_num;
+            
+        end; clear trial;
+            
+        
+          % consolidate all that data
+          t.consolidata(:,1) = num2cell(t.condition);
+          t.consolidata(:,2) = num2cell(t.conditioncode);
+          t.consolidata(:,3) = num2cell(d.subjects(subject).exp.button');
+          t.consolidata(:,4) = num2cell(d.subjects(subject).exp.rt');
+          t.consolidata(:,5) = num2cell(d.subjects(subject).exp.correct');
+          t.consolidata(:,6) = num2cell(t.trialtype);
+
+          % stack it up
+         d.subjects(subject).lba = t.consolidata;
+         d.lbadata{ilba} = t.consolidata;
+        
+    end % end lba approved if statement
+    
+end; clear subject ilba; % end subject loop for lba
+
+fprintf('saving lba adjusted output from %s\n', mfilename);
+save(p.save_file,'d'); % save all data to a .mat file
+ 
 
 function accuracy = accthis(data)
 accuracy = sum(data)/length(data);

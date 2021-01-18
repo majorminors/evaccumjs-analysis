@@ -1,9 +1,14 @@
 %% Fitting LBA to behavioural data
 % Adapted from Alessandro Tomassini's RDK task
-% DM Last Edit: Feb 2020
+% DM Last Edit: JAN 2021
+% 
+% expects data in the format:
+% each subject is a cell array across a single row
+% each cell array has columns of data, each row is one trial:
+% | condition (str) | condition code | keypress | rt | accuracy | trialtype |
 %
 % path to saved file can be found in p.save_path
-
+%
 % to run go to matlab opened terminal and run:
 % squeue -u username (dm06)
 
@@ -20,32 +25,34 @@ t = struct(); % for temp vars
 %% set up variables
 
 % required
-rootdir = '/group/woolgar-lab/projects/Dorian/EvAccum'; %'C:\Users\doria\Nextcloud\desiderata\desiderata\04 Research\05 Evidence Accumulation\01 EvAccum Code';%'\\cbsu\data\Group\Woolgar-Lab\projects\Dorian\EvAccum'; % root directory - used to inform directory mappings
+rootdir = '/group/woolgar-lab/projects/Dorian/evaccum/evaccumjs-analysis'; %'C:\Users\doria\Nextcloud\desiderata\desiderata\04 Research\05 Evidence Accumulation\01 EvAccum Code';%'\\cbsu\data\Group\Woolgar-Lab\projects\Dorian\EvAccum'; % root directory - used to inform directory mappings
 
 % only required if not testing
-datadir = fullfile(rootdir,'data','behav_pilot_2-hc');
-lbadatadir = fullfile(datadir,'lba_fit'); % expects to find your data here and will save results in a sub-folder here
-p.data_name = 'hard_coh_data.mat'; % data file name
+datadir = fullfile(rootdir,'data','behav_1');
+lbadatadir = datadir; % expects to find your data here and will save results in a sub-folder here
+p.data_name = 'processed_data.mat'; % data file name
 jobdir = fullfile(lbadatadir,'scheduled_jobs'); % where you'll save any scheduled jobs (i.e. running on the scheduler)
-toolsdir = fullfile(rootdir, 'tools_analysis','lba','LBA_Fit_Evaccum','scripts'); % where are all your scripts/tools?
+toolsdir = fullfile(rootdir, 'lib','lba'); % where are all your scripts/tools?
 
 p.save_name = 'Model_%s.mat';
 p.rng_seed = 19; % the rng seed number - fixed for reproducibility
-t.local = 0; % run locally? Or 0 will use cbu scheduler
+t.local = 1; % run locally? Or 0 will use cbu scheduler
+
+% test vars
 p.testing = 0; % if you want to use testing data, then switch to 1 and add the data folder to the path, else to 0. will save to pwd/test_results/
 t.subject = 1; % if testing, which subject do you want to run?
-t.test_data_name = 'lba_test_data.mat'; % name of your test data
+t.test_data_name = 'lba_test_data.mat'; % name of your test data - expects this to be in pwd
 
 % these are all the model variants we want to test - different combinations of free parameters
 p.design_space={[1,3],[1,4],[1,3,4],[1,3,4,5],[1,2],[1,2,3],[1,2,4],[1,2,3,4],[1,2,3,4,5],[1,5],[1,3,5],[1,4,5],[1,2,5],[1,2,3,5],[1,2,4,5]};
 settings.randiter  = 100; % random search iters before optimization
-settings.nosession = 100; % optimization iterations - more equals less chance of ending up in a local minimum
+settings.nosession = 1; % optimization iterations - more equals less chance of ending up in a local minimum
 settings.overwrite = 1;
 
 % directory mappings
 if ~p.testing
     addpath(genpath(fullfile(toolsdir))); % add tools folder to path (includes LBA scripts)
-    p.save_path = fullfile(lbadatadir, 'results');
+    p.save_path = fullfile(lbadatadir, 'lba_results');
     if ~exist(p.save_path,'dir')
         mkdir(p.save_path);
     end
@@ -67,7 +74,7 @@ else
     
     % get the data
     t.alldata = load(t.datapath);
-    t.data = t.alldata.d.subjects;
+    t.data = t.alldata.d.lbadata;
 end
 
 %% enter the data
