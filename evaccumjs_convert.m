@@ -63,7 +63,7 @@ for subject = 1:length(t.alldata) % loop through each subject
     % lets get a code for button press
     t.button_condition = t.this_subj_data{1}.condition;
     % condition 1 : respkeys o,p
-    % condition 2 : respkeys p,o
+    % condition 2 : respkeys p,ocd
     % keypress is JS, so 79 is o and 80 is p
     if t.button_condition{2} == 1
         t.keycode = [79,80];

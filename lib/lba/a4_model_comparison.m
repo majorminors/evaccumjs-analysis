@@ -79,9 +79,9 @@ n = size(BIC_all,2);
 
 % plot BICs by subject
 figure; b = bar(BIC_all'*-0.5,'FaceColor',[0 0.4470 0.7410]);
-% ylim([1300 1410]);
-b(1).FaceColor = [.25 0 .25];
-b(2).FaceColor = [.5 0 .5];
+ylim([20400 20900]);
+b(1).FaceColor = [.5 0 .5];
+b(2).FaceColor = [.25 0 .25];
 % b(5).FaceColor = [.9 0 .9];
 b(9).FaceColor = [.5 0 .5];
 % b(10).FaceColor = [.5 0 .5];
@@ -89,7 +89,7 @@ export_fig(fullfile(modeldir,'subjectBICs.jpeg'),'-transparent');
 
 % plot BICs by model
 figure; b = bar(BIC_all*-0.5,'FaceColor',[0 0.4470 0.7410]);
-ylim([1310 1410]);
+ylim([20400 20900]);
 export_fig(fullfile(modeldir,'modelBICs.jpeg'),'-transparent');
 
 %plot BIC (mean)
@@ -102,8 +102,8 @@ end
 figure; b = bar(meanBIC);
 ylim([min(meanBIC)-10 max(meanBIC)+10]);
 b.FaceColor = 'flat';
-b.CData(1,:) = [.25 0 .25];
-b.CData(2,:) = [.5 0 .5];
+b.CData(1,:) = [.5 0 .5];
+b.CData(2,:) = [.25 0 .25];
 % b.CData(5,:) = [.9 0 .9];
 b.CData(9,:) = [.5 0 .5];
 % b.CData(10,:) = [.5 0 .5];
