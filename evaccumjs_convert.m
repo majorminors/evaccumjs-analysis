@@ -29,22 +29,20 @@ p.save_file = fullfile(datadir, p.savefilename);
 d.fileinfo = dir(fullfile(datadir, p.datafilepattern)); % find all the datafiles and get their info
 t.alldata = {};
 t.skip_this_dataset = 0;
-for file = 1:length(d.fileinfo)
+for file = 1:length(d.fileinfo) % loop through the files
     t.path = fullfile(datadir, d.fileinfo(file).name); % get the full path to the file
     fprintf(1, 'working with %s\n', t.path); % print that so you can check
     
     t.load = loadjson(t.path); % load in the data
     
-    if length(t.load) > 1
-        dataset = [1,length(t.load(1,:))];
-        disp(dataset);
+    if length(t.load) > 1 % if there's more than one participant in the file
+        dataset = [1,length(t.load(1,:))]; % variable to control the while loop - left side indicates what participant dataset in the file we're up to, right side indicates number of datasets
         while (dataset(1) <= dataset(2))
-            if isempty(t.load{1,dataset(1)})
-                t.load(:,dataset(1)) = [];
-                dataset(2) = dataset(2)-1;
-                disp(dataset);
+            if isempty(t.load{1,dataset(1)}) % if this dataset has nothing in it (i.e. a participant who started but didn't finish)
+                t.load(:,dataset(1)) = []; % clear it and
+                dataset(2) = dataset(2)-1; % reduce the number of datasets by one
             end
-            dataset(1) = dataset(1)+1;
+            dataset(1) = dataset(1)+1; % move on to the next dataset
         end
     end
     
@@ -63,7 +61,7 @@ for subject = 1:length(t.alldata) % loop through each subject
     % lets get a code for button press
     t.button_condition = t.this_subj_data{1}.condition;
     % condition 1 : respkeys o,p
-    % condition 2 : respkeys p,ocd
+    % condition 2 : respkeys p,o
     % keypress is JS, so 79 is o and 80 is p
     if t.button_condition{2} == 1
         t.keycode = [79,80];
@@ -156,35 +154,43 @@ for subject = 1:length(t.alldata) % loop through each subject
     d.subjects(subject).exp = t.exp;
     
     disp('*coherence*')
-    disp('accuracy')
+    disp('accuracy (low coh/hard threshold is .9, high coh/easy threshold is .7)')
     disp(accthis(d.subjects(subject).coh.correct))
     disp('num invalid')
     disp(length(find(d.subjects(subject).coh.rt == -1)))
     disp('num fast responses')
-    disp(length(find(d.subjects(subject).coh.rt >=0 & d.subjects(subject).coh.rt < 500)))
+    disp(length(find(d.subjects(subject).coh.rt >=0 & d.subjects(subject).coh.rt < 400)))
     disp('*rule*')
-    disp('accuracy')
+    disp('accuracy (hard threshold is .6)')
     disp(accthis(d.subjects(subject).rule.correct))
     disp('num invalid')
     disp(length(find(d.subjects(subject).rule.rt == -1)))
     disp('num fast responses')
-    disp(length(find(d.subjects(subject).rule.rt >=0 & d.subjects(subject).rule.rt < 500)))
+    disp(length(find(d.subjects(subject).rule.rt >=0 & d.subjects(subject).rule.rt < 400)))
     disp('*experiment*')
-    disp('accuracy')
+    disp('accuracy (.6 is a floor effect)')
     disp(accthis(d.subjects(subject).exp.correct))
     disp('num invalid')
     disp(length(find(d.subjects(subject).exp.rt == -1)))
     disp('num fast responses')
-    disp(length(find(d.subjects(subject).exp.rt >=0 & d.subjects(subject).exp.rt < 500)))
+    disp(length(find(d.subjects(subject).exp.rt >=0 & d.subjects(subject).exp.rt < 400)))
     
-    % check thresholds
-    coh_thresholding(d.subjects(subject).coh,p.save_file);
-    match_thresholding(d.subjects(subject).rule,p.save_file);
+    t.prompt = 'Continue to psychophys with this participant? y/n [y]: ';
+    t.do_pp = input(t.prompt,'s');
+    if isempty(t.do_pp); t.do_pp = 'y'; end
     
-    t.prompt = 'Continue to process for LBA fit with this participant? y/n [y]: ';
-    t.do_lba = input(t.prompt,'s');
-    if isempty(t.do_lba); t.do_lba = 'y'; end
-    
+    if t.do_pp == 'y'
+        % check thresholds
+        coh_thresholding(d.subjects(subject).coh,p.save_file);
+        match_thresholding(d.subjects(subject).rule,p.save_file);
+
+
+        t.prompt = 'Continue to process for LBA fit with this participant? y/n [y]: ';
+        t.do_lba = input(t.prompt,'s');
+        if isempty(t.do_lba); t.do_lba = 'y'; end
+    else
+        t.do_lba = 'n';
+    end
     d.subjects(subject).lba = t.do_lba;
     
 end; clear subject; % end subject loop for initial checking
