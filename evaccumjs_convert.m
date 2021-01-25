@@ -177,6 +177,10 @@ for subject = 1:length(t.alldata) % loop through each subject
     disp('num fast responses')
     disp(length(find(d.subjects(subject).exp.rt >=0 & d.subjects(subject).exp.rt < 500)))
     
+    % check thresholds
+    coh_thresholding(d.subjects(subject).coh,p.save_file);
+    match_thresholding(d.subjects(subject).rule,p.save_file);
+    
     t.prompt = 'Continue to process for LBA fit with this participant? y/n [y]: ';
     t.do_lba = input(t.prompt,'s');
     if isempty(t.do_lba); t.do_lba = 'y'; end
