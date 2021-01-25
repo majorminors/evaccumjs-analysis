@@ -160,6 +160,7 @@ for subject = 1:length(t.alldata) % loop through each subject
     disp(length(find(d.subjects(subject).coh.rt == -1)))
     disp('num fast responses')
     disp(length(find(d.subjects(subject).coh.rt >=0 & d.subjects(subject).coh.rt < 400)))
+    figure; normplot(d.subjects(subject).coh.rt)
     disp('*rule*')
     disp('accuracy (hard threshold is .6)')
     disp(accthis(d.subjects(subject).rule.correct))
@@ -167,6 +168,7 @@ for subject = 1:length(t.alldata) % loop through each subject
     disp(length(find(d.subjects(subject).rule.rt == -1)))
     disp('num fast responses')
     disp(length(find(d.subjects(subject).rule.rt >=0 & d.subjects(subject).rule.rt < 400)))
+    figure; normplot(d.subjects(subject).rule.rt)
     disp('*experiment*')
     disp('accuracy (.6 is a floor effect)')
     disp(accthis(d.subjects(subject).exp.correct))
@@ -174,6 +176,8 @@ for subject = 1:length(t.alldata) % loop through each subject
     disp(length(find(d.subjects(subject).exp.rt == -1)))
     disp('num fast responses')
     disp(length(find(d.subjects(subject).exp.rt >=0 & d.subjects(subject).exp.rt < 400)))
+    figure; normplot(d.subjects(subject).exp.rt)
+    
     
     t.prompt = 'Continue to psychophys with this participant? y/n [y]: ';
     t.do_pp = input(t.prompt,'s');
@@ -181,8 +185,22 @@ for subject = 1:length(t.alldata) % loop through each subject
     
     if t.do_pp == 'y'
         % check thresholds
-        coh_thresholding(d.subjects(subject).coh,p.save_file);
-        match_thresholding(d.subjects(subject).rule,p.save_file);
+        [t.coh_easy,t.coh_hard] = coh_thresholding(d.subjects(subject).coh,p.save_file);
+        [t.match_easy,t.match_hard,t.match_summary] = match_thresholding(d.subjects(subject).rule,p.save_file);
+        disp('*coherence thresholds*')
+        disp('easy:')
+        disp(t.coh_easy)
+        disp('hard:')
+        disp(t.coh_hard)
+        disp('*matching thresholds*')
+        disp('easy:')
+        disp(t.match_easy)
+        disp('mean rt, correct trials, easy condition:')
+        disp(mean(t.match_summary(4,:)))
+        disp('hard:')
+        disp(t.match_hard)
+        disp('mean rt, correct trials, hard condition:')
+        disp(mean(t.match_summary(6,:)))
 
 
         t.prompt = 'Continue to process for LBA fit with this participant? y/n [y]: ';
@@ -230,19 +248,45 @@ for subject = 1:length(d.subjects) % loop through subjects
             t.trialtype(trial,1) = d.subjects(subject).exp.stim_array{1,trial}.trial_cond_num;
             
         end; clear trial;
-            
         
-          % consolidate all that data
-          t.consolidata(:,1) = num2cell(t.condition);
-          t.consolidata(:,2) = num2cell(t.conditioncode);
-          t.consolidata(:,3) = num2cell(d.subjects(subject).exp.button');
-          t.consolidata(:,4) = num2cell(d.subjects(subject).exp.rt');
-          t.consolidata(:,5) = num2cell(d.subjects(subject).exp.correct');
-          t.consolidata(:,6) = num2cell(t.trialtype);
-
-          % stack it up
-         d.subjects(subject).lba = t.consolidata;
-         d.lbadata{ilba} = t.consolidata;
+        
+        % consolidate all that data
+        t.consolidata(:,1) = num2cell(t.condition);
+        t.consolidata(:,2) = num2cell(t.conditioncode);
+        t.consolidata(:,3) = num2cell(d.subjects(subject).exp.button');
+        t.consolidata(:,4) = num2cell(d.subjects(subject).exp.rt');
+        t.consolidata(:,5) = num2cell(d.subjects(subject).exp.correct');
+        t.consolidata(:,6) = num2cell(t.trialtype);
+        
+        % get some rt histograms
+        disp('1 = EcEr, 2 = EcHr, 3 = HcEr, 4 = HcHr')
+        titles = {'EcEr','EcHr','HcEr','HcHr'};
+        all_conditions = cell2mat(t.consolidata(:,2));
+        all_accuracies = cell2mat(t.consolidata(:,5));
+        all_rts = cell2mat(t.consolidata(:,4));
+        figure;
+        for condition = 1:4
+            accuracy_idx = all_conditions == condition;
+            the_rts = accuracy_idx & all_accuracies;
+            subplot(2,2,condition)
+            h = histogram(all_rts(the_rts),'FaceColor',[0.0 0.502 0.502]);
+            title(titles{condition});
+            h.NumBins = 40;
+            xlim([0,1500]);
+            ylim([0, 40]);
+        end; clear condition all_conditions all_accuracies all_rts accuracy_idx the_rts
+        
+        t.prompt = 'Continue with this participant? y/n [y]: ';
+        t.cont_lba = input(t.prompt,'s');
+        if isempty(t.cont_lba); t.cont_lba = 'y'; end
+        
+        if t.cont_lba
+        % stack it up
+        d.subjects(subject).lba = t.consolidata;
+        d.lbadata{ilba} = t.consolidata;
+        else
+            d.subjects(subject).lba = 'n';
+        end
         
     end % end lba approved if statement
     

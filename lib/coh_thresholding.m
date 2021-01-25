@@ -1,4 +1,4 @@
-function [easy_threshold,hard_threshold,overview,summary] = coh_thresholding(input_data,save_file)
+function [easy_threshold,hard_threshold,summary] = coh_thresholding(input_data,save_file)
 % function [easy_value,hard_value] = coh_thresholding(p,d)
 %
 % coherence threshold analysis
@@ -49,7 +49,7 @@ end
 coh_point_values = sort(unique(coh_point_values)); % cull to unique values only, and sort in order
 correct_rts = mean(rts,2,'omitnan');
 for i = 1:length(accuracy(:,1))
-   psignifit_array(i,1) = i;
+   psignifit_array(i,1) = coh_point_values(i);
    psignifit_array(i,2) = sum(accuracy(i,:),'omitnan');
 end
 psignifit_array(:,3) = sum(~isnan(accuracy),2);

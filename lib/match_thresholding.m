@@ -1,4 +1,4 @@
-function [easy_threshold,hard_threshold,overview,summary] = match_thresholding(input_data,save_file)
+function [easy_threshold,hard_threshold,summary] = match_thresholding(input_data,save_file)
 % function [easy_value,hard_value] = coh_thresholding(p,d)
 %
 % matching threshold analysis
@@ -86,7 +86,7 @@ neg_psignifit_array(:,2:3,:) = psignifit_array(:,2:3,:);
 %   3) percent correct (low coherence)
 %   4) mean rt for correct trials (low coherence)
 %   5) percent correct (high coherence)
-%   6) mean rt for incorrect trials (high coherence)
+%   6) mean rt for correct trials (high coherence)
 summary(1,:) = 1:length(rule_point_values(:,:,1));
 summary(2,:) = rule_point_values(:,:,1)';
 summary(3,:) = psignifit_array(:,2,1)./psignifit_array(:,3,1);
