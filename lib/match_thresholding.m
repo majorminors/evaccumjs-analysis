@@ -1,4 +1,4 @@
-function [easy_threshold,hard_threshold,summary] = match_thresholding(input_data,save_file)
+function [easy_threshold,hard_threshold,summary] = match_thresholding(input_data,save_dir,save_file,subjectid)
 % function [easy_value,hard_value] = coh_thresholding(p,d)
 %
 % matching threshold analysis
@@ -72,6 +72,11 @@ for block = 1:num_blocks
     
 end
 
+% lets add a block to the psignifit array which combines them
+psignifit_array(:,1,3) = psignifit_array(:,1,1);
+psignifit_array(:,2,3) = psignifit_array(:,2,1)+psignifit_array(:,2,2);
+psignifit_array(:,3,3) = psignifit_array(:,3,1)+psignifit_array(:,3,2);
+
 % Note: the psignifit tool only goes low to high, so if as in this case the
 %       values of your stimulus level goes high to low, then you can flip
 %       the intensity values (i.e. lie to matlab) or invert them to their
@@ -98,7 +103,24 @@ summary(2,:) = -summary(2,:);
 
 % prep data for psignifit
 
-
+sigmoid_all = figure('visible','on');
+[plotresult, plotline, plotdata] = psychcurve(neg_psignifit_array(:,:,3));
+hold on
+% find the x value for proportion correct:
+[~, low_threshold_idx] = min(abs(plotline.YData-low_threshold_pc(1))); % first find the index of the value closest to the threshold pc
+low_threshold = plotline.XData(low_threshold_idx); % then find the value using the index
+high_threshold = -90-low_threshold; % this is the inverse of the low_threshold value - currently I've flipped everything into negative so it is oriented correctly in the psignifit tools
+% add plot lines at the threshold value on y:
+plot([-90 -0], [low_threshold_pc low_threshold_pc], '-', 'Color',[1 0 0])
+[~, high_pc_idx] = min(abs(plotline.XData-high_threshold(1))); % then find the index of the value closest to the high_threshold
+high_threshold_pc = plotline.YData(high_pc_idx); % then find the value using the index and print that in the command window
+plot([-90 -0], [high_threshold_pc high_threshold_pc], '-', 'Color',[0 1 0])
+% add plot lines at the threshold value on x:
+plot([low_threshold low_threshold], [0.3 1], '-', 'Color',[1 0 0])
+plot([high_threshold high_threshold], [0.3 1], '-', 'Color',[0 1 0])
+%savefig([save_file '_lowcohsigmoid']);
+export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_sigmoid_both.jpeg')),'-transparent')
+hold off
 
 % make a sigmoid and put it on a figure
 sigmoid_low = figure('visible','on');
@@ -116,12 +138,14 @@ plot([-90 -0], [high_threshold_pc high_threshold_pc], '-', 'Color',[0 1 0])
 % add plot lines at the threshold value on x:
 plot([low_threshold low_threshold], [0.3 1], '-', 'Color',[1 0 0])
 plot([high_threshold high_threshold], [0.3 1], '-', 'Color',[0 1 0])
-savefig([save_file '_lowcohsigmoid']);
+%savefig([save_file '_lowcohsigmoid']);
+export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_easy_sigmoid.jpeg')),'-transparent')
 hold off
 % diplay rts on a figure
 rts_low = figure('visible','off');
 plot(summary(2,:),summary(4,:),'ro:');
-savefig([save_file '_low_coh_rts']);
+%savefig([save_file '_low_coh_rts']);
+export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_easy_rts.jpeg')),'-transparent')
 % make a sigmoid and put it on a figure
 sigmoid_hi = figure('visible','off');
 [plotresult, plotline, plotdata] = psychcurve(neg_psignifit_array(:,:,1));
@@ -134,12 +158,14 @@ plot([-90 -0], [low_threshold_pc low_threshold_pc], '-', 'Color',[1 0 0])
 plot([-90 -0], [low_threshold_pc low_threshold_pc], '-', 'Color',[1 0 0])
 plot([low_threshold low_threshold], [0.3 1], '-', 'Color',[1 0 0])
 plot([high_threshold high_threshold], [0.3 1], '-', 'Color',[0 1 0])
-savefig([save_file '_hicohsigmoid']);
+%savefig([save_file '_hicohsigmoid']);
+export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_hard_sigmoid.jpeg')),'-transparent')
 hold off
 % diplay rts on a figure
 rts_hi = figure('visible','off');
 plot(summary(2,:),summary(6,:),'ro:');
-savefig([save_file '_hi_coh_rts']);
+%savefig([save_file '_hi_coh_rts']);
+export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_hard_rts.jpeg')),'-transparent')
 
 low_threshold = abs(low_threshold);
 high_threshold = abs(high_threshold);
@@ -166,6 +192,7 @@ t(1)=title(visualise(1),'percent correct low coh');
 t(2)=title(visualise(2),'reaction time low coh');
 t(3)=title(visualise(3),'percent correct hi coh');
 t(4)=title(visualise(4),'reaction time hi coh');
+export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_complete.jpeg')),'-transparent')
 
 % make the output a little less confusing to understand
 easy_threshold = high_threshold;

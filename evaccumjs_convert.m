@@ -14,10 +14,24 @@ p = struct(); % keep some of our parameters tidy
 d = struct(); % set up a structure for the data info
 t = struct(); % set up a structure for temp data
 
+p.plot_norms = 0;
+p.skip_check_pp = 1;
+p.plot_coh = 0;
+p.plot_match = 1;
+p.skip_check_lba = 1;
+p.plot_rt_hist = 0;
+p.plot_rts = 0;
+p.plot_pc = 0;
+p.skip_check_lbacont = 1;
+
 % set up variables
 rootdir = pwd; %% root directory - used to inform directory mappings
 datadir = fullfile(rootdir,'data/behav_1'); % location of data
 p.savefilename = 'processed_data'; % savefile for all data
+figdir = fullfile(datadir,'figures'); % place to save figures
+if ~exist(figdir,'dir')
+    mkdir(figdir);
+end
 p.datafilepattern = 'jatos_results_*'; % file pattern of input data
 
 % directory mapping
@@ -152,7 +166,7 @@ for subject = 1:length(t.alldata) % loop through each subject
     d.subjects(subject).coh = t.coh;
     d.subjects(subject).rule = t.rule;
     d.subjects(subject).exp = t.exp;
-    
+
     disp('*coherence*')
     disp('accuracy (low coh/hard threshold is .9, high coh/easy threshold is .7)')
     disp(accthis(d.subjects(subject).coh.correct))
@@ -160,7 +174,11 @@ for subject = 1:length(t.alldata) % loop through each subject
     disp(length(find(d.subjects(subject).coh.rt == -1)))
     disp('num fast responses')
     disp(length(find(d.subjects(subject).coh.rt >=0 & d.subjects(subject).coh.rt < 400)))
-    figure; normplot(d.subjects(subject).coh.rt)
+    if p.plot_norms
+        figure; normplot(d.subjects(subject).coh.rt)
+        title('coherence thresholding')
+        export_fig(fullfile(figdir,strcat(num2str(subject),'_coh_normplot.jpeg')),'-transparent')
+    end
     disp('*rule*')
     disp('accuracy (hard threshold is .6)')
     disp(accthis(d.subjects(subject).rule.correct))
@@ -168,7 +186,11 @@ for subject = 1:length(t.alldata) % loop through each subject
     disp(length(find(d.subjects(subject).rule.rt == -1)))
     disp('num fast responses')
     disp(length(find(d.subjects(subject).rule.rt >=0 & d.subjects(subject).rule.rt < 400)))
-    figure; normplot(d.subjects(subject).rule.rt)
+    if p.plot_norms
+        figure; normplot(d.subjects(subject).rule.rt)
+        title('match thresholding')
+        export_fig(fullfile(figdir,strcat(num2str(subject),'_match_normplot.jpeg')),'-transparent')
+    end
     disp('*experiment*')
     disp('accuracy (.6 is a floor effect)')
     disp(accthis(d.subjects(subject).exp.correct))
@@ -176,36 +198,51 @@ for subject = 1:length(t.alldata) % loop through each subject
     disp(length(find(d.subjects(subject).exp.rt == -1)))
     disp('num fast responses')
     disp(length(find(d.subjects(subject).exp.rt >=0 & d.subjects(subject).exp.rt < 400)))
-    figure; normplot(d.subjects(subject).exp.rt)
+    if p.plot_norms
+        figure; normplot(d.subjects(subject).exp.rt)
+        title('experiment')
+        export_fig(fullfile(figdir,strcat(num2str(subject),'_exp_normplot.jpeg')),'-transparent')
+    end
     
-    
-    t.prompt = 'Continue to psychophys with this participant? y/n [y]: ';
-    t.do_pp = input(t.prompt,'s');
-    if isempty(t.do_pp); t.do_pp = 'y'; end
+    if p.skip_check_pp
+        t.do_pp = 'y';
+    else
+        t.prompt = 'Continue to psychophys with this participant? y/n [y]: ';
+        t.do_pp = input(t.prompt,'s');
+        if isempty(t.do_pp); t.do_pp = 'y'; end
+    end
     
     if t.do_pp == 'y'
         % check thresholds
-        [t.coh_easy,t.coh_hard] = coh_thresholding(d.subjects(subject).coh,p.save_file);
-        [t.match_easy,t.match_hard,t.match_summary] = match_thresholding(d.subjects(subject).rule,p.save_file);
-        disp('*coherence thresholds*')
-        disp('easy:')
-        disp(t.coh_easy)
-        disp('hard:')
-        disp(t.coh_hard)
-        disp('*matching thresholds*')
-        disp('easy:')
-        disp(t.match_easy)
-        disp('mean rt, correct trials, easy condition:')
-        disp(mean(t.match_summary(4,:)))
-        disp('hard:')
-        disp(t.match_hard)
-        disp('mean rt, correct trials, hard condition:')
-        disp(mean(t.match_summary(6,:)))
+        
+        if p.plot_coh; [t.coh_easy,t.coh_hard] = coh_thresholding(d.subjects(subject).coh,figdir,p.save_file,subject); end
+        if p.plot_match; [t.match_easy,t.match_hard,t.match_summary] = match_thresholding(d.subjects(subject).rule,figdir,p.save_file,subject); end
+        if p.plot_coh
+            disp('*coherence thresholds*')
+            disp('easy:')
+            disp(t.coh_easy)
+            disp('hard:')
+            disp(t.coh_hard)
+        end
+        if plot_match
+            disp('*matching thresholds*')
+            disp('easy:')
+            disp(t.match_easy)
+            disp('mean rt, correct trials, easy condition:')
+            disp(mean(t.match_summary(4,:)))
+            disp('hard:')
+            disp(t.match_hard)
+            disp('mean rt, correct trials, hard condition:')
+            disp(mean(t.match_summary(6,:)))
+        end
 
-
-        t.prompt = 'Continue to process for LBA fit with this participant? y/n [y]: ';
-        t.do_lba = input(t.prompt,'s');
-        if isempty(t.do_lba); t.do_lba = 'y'; end
+        if p.skip_check_lba
+            t.do_lba = 'y';
+        else
+            t.prompt = 'Continue to process for LBA fit with this participant? y/n [y]: ';
+            t.do_lba = input(t.prompt,'s');
+            if isempty(t.do_lba); t.do_lba = 'y'; end
+        end
     else
         t.do_lba = 'n';
     end
@@ -257,28 +294,79 @@ for subject = 1:length(d.subjects) % loop through subjects
         t.consolidata(:,4) = num2cell(d.subjects(subject).exp.rt');
         t.consolidata(:,5) = num2cell(d.subjects(subject).exp.correct');
         t.consolidata(:,6) = num2cell(t.trialtype);
+
+        if p.plot_rt_hist
+            % get some rt histograms
+            disp('1 = EcEr, 2 = EcHr, 3 = HcEr, 4 = HcHr')
+            titles = {'EcEr','EcHr','HcEr','HcHr'};
+            all_conditions = cell2mat(t.consolidata(:,2));
+            all_accuracies = cell2mat(t.consolidata(:,5));
+            all_rts = cell2mat(t.consolidata(:,4));
+            figure;
+            for condition = 1:4
+                condition_idx = all_conditions == condition;
+                the_rts = condition_idx & all_accuracies; % condition index and accuracy is 1 (not 0)
+                subplot(2,2,condition)
+                h = histogram(all_rts(the_rts),'FaceColor',[0.0 0.502 0.502]);
+                title(titles{condition});
+                h.NumBins = 40;
+                xlim([0,1500]);
+                ylim([0, 40]);
+            end; clear condition all_conditions all_accuracies all_rts condition_idx the_rts
+            export_fig(fullfile(figdir,strcat('LBA_',num2str(subject),'_rt_hist.jpeg')),'-transparent')
+        end
+
+        if p.plot_rts
+            % get some rt bars
+            disp('1 = EcEr, 2 = EcHr, 3 = HcEr, 4 = HcHr')
+            titles = {'EcEr','EcHr','HcEr','HcHr'};
+            all_conditions = cell2mat(t.consolidata(:,2));
+            all_accuracies = cell2mat(t.consolidata(:,5));
+            all_rts = cell2mat(t.consolidata(:,4));
+            figure;
+            for condition = 1:4
+                condition_idx = all_conditions == condition;
+                the_rts = condition_idx & all_accuracies; % condition index and accuracy is 1 (not 0)
+                mean_rts(condition) = mean(all_rts(the_rts),'omitnan');
+                sem_rts(condition) = nansem(all_rts(the_rts));
+            end; clear condition all_conditions all_accuracies all_rts accuracy_idx the_rts
+            xvalues = categorical(titles);
+            xvalues = reordercats(xvalues,titles);
+            bar(xvalues,mean_rts,'FaceColor',[0.0 0.502 0.502]);
+            hold on
+            er = errorbar(xvalues,mean_rts,sem_rts);
+            er.Color = [0 0 0];
+            er.LineStyle = 'none';
+            hold off
+            export_fig(fullfile(figdir,strcat('LBA_',num2str(subject),'_rts.jpeg')),'-transparent')
+        end
         
-        % get some rt histograms
-        disp('1 = EcEr, 2 = EcHr, 3 = HcEr, 4 = HcHr')
-        titles = {'EcEr','EcHr','HcEr','HcHr'};
-        all_conditions = cell2mat(t.consolidata(:,2));
-        all_accuracies = cell2mat(t.consolidata(:,5));
-        all_rts = cell2mat(t.consolidata(:,4));
-        figure;
-        for condition = 1:4
-            accuracy_idx = all_conditions == condition;
-            the_rts = accuracy_idx & all_accuracies;
-            subplot(2,2,condition)
-            h = histogram(all_rts(the_rts),'FaceColor',[0.0 0.502 0.502]);
-            title(titles{condition});
-            h.NumBins = 40;
-            xlim([0,1500]);
-            ylim([0, 40]);
-        end; clear condition all_conditions all_accuracies all_rts accuracy_idx the_rts
+        if p.plot_pc
+            % get some accuracy bars
+            disp('1 = EcEr, 2 = EcHr, 3 = HcEr, 4 = HcHr')
+            titles = {'EcEr','EcHr','HcEr','HcHr'};
+            all_conditions = cell2mat(t.consolidata(:,2));
+            all_accuracies = cell2mat(t.consolidata(:,5));
+            figure;
+            for condition = 1:4
+                condition_idx = all_conditions == condition;
+                correct_accs = condition_idx & all_accuracies; % condition index and accuracy is 1 (not 0)
+                condition_accs = all_accuracies(condition_idx);
+                percent_correct(condition) = (sum(condition_accs)/length(condition_accs))*100;
+            end; clear condition all_conditions all_accuracies all_rts accuracy_idx the_rts
+            xvalues = categorical(titles);
+            xvalues = reordercats(xvalues,titles);
+            bar(xvalues,percent_correct,'FaceColor',[0.0 0.502 0.502]);
+            export_fig(fullfile(figdir,strcat('LBA_',num2str(subject),'_percent_correct.jpeg')),'-transparent')
+        end
         
-        t.prompt = 'Continue with this participant? y/n [y]: ';
-        t.cont_lba = input(t.prompt,'s');
-        if isempty(t.cont_lba); t.cont_lba = 'y'; end
+        if p.skip_check_lbacont
+            t.cont_lba = 'y';
+        else
+            t.prompt = 'Continue with this participant? y/n [y]: ';
+            t.cont_lba = input(t.prompt,'s');
+            if isempty(t.cont_lba); t.cont_lba = 'y'; end
+        end
         
         if t.cont_lba
         % stack it up

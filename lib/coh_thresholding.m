@@ -1,4 +1,4 @@
-function [easy_threshold,hard_threshold,summary] = coh_thresholding(input_data,save_file)
+function [easy_threshold,hard_threshold,summary] = coh_thresholding(input_data,save_dir,save_file,subjectid)
 % function [easy_value,hard_value] = coh_thresholding(p,d)
 %
 % coherence threshold analysis
@@ -80,12 +80,14 @@ plot([0 1], [high_threshold_pc high_threshold_pc], '-', 'Color',[0 1 0])
 % add plot lines at the threshold value on x:
 plot([low_threshold low_threshold], [0.3 1], '-', 'Color',[1 0 0])
 plot([high_threshold high_threshold], [0.3 1], '-', 'Color',[0 1 0])
-savefig(sigmoid,[save_file '_sigmoid']);
+%savefig(sigmoid,[save_file '_sigmoid']);
+export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_coh_sigmoid.jpeg')),'-transparent')
 hold off
 % diplay rts on a figure
 rts = figure('visible','off');
 plot(summary(2,:),summary(4,:),'ro:')
-savefig(rts,[save_file '_rts']);
+%savefig(rts,[save_file '_rts']);
+export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_coh_rts.jpeg')),'-transparent')
 % load those figures into variables
 %sigmoid=hgload(fullfile(datadir, save_file, [data_file '_sigmoid.fig']));
 %rts=hgload(fullfile(datadir, data_file, [data_file '_rts.fig']));
@@ -100,7 +102,7 @@ copyobj(allchild(get(rts,'CurrentAxes')),visualise(2));
 % add a legend
 t(1)=title(visualise(1),'percent correct');
 t(2)=title(visualise(2),'reaction time');
-
+export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_coh_complete.jpeg')),'-transparent')
 % make the output a little less confusing to understand
 easy_threshold = high_threshold;
 hard_threshold = low_threshold;
