@@ -14,19 +14,20 @@ p = struct(); % keep some of our parameters tidy
 d = struct(); % set up a structure for the data info
 t = struct(); % set up a structure for temp data
 
-p.plot_norms = 0;
-p.skip_check_pp = 1;
-p.plot_coh = 0;
+p.one_participant = 1; % your script doesn't work for one participant, so switch this on to apply a fix
+p.plot_norms = 1;
+p.skip_check_pp = 0;
+p.plot_coh = 1;
 p.plot_match = 1;
-p.skip_check_lba = 1;
-p.plot_rt_hist = 0;
-p.plot_rts = 0;
-p.plot_pc = 0;
-p.skip_check_lbacont = 1;
+p.skip_check_lba = 0;
+p.plot_rt_hist = 1;
+p.plot_rts = 1;
+p.plot_pc = 1;
+p.skip_check_lbacont = 0;
 
 % set up variables
 rootdir = pwd; %% root directory - used to inform directory mappings
-datadir = fullfile(rootdir,'data/behav_1'); % location of data
+datadir = fullfile(rootdir,'data/behav_easy_rule_2'); % location of data
 p.savefilename = 'processed_data'; % savefile for all data
 figdir = fullfile(datadir,'figures'); % place to save figures
 if ~exist(figdir,'dir')
@@ -46,9 +47,11 @@ t.skip_this_dataset = 0;
 for file = 1:length(d.fileinfo) % loop through the files
     t.path = fullfile(datadir, d.fileinfo(file).name); % get the full path to the file
     fprintf(1, 'working with %s\n', t.path); % print that so you can check
-    
-    t.load = loadjson(t.path); % load in the data
-    
+
+    %t.load = loadjson(t.path); % load in the data
+    t.load = jsondecode(fileread(t.path));
+    t.load = t.load';
+        disp('hi')
     if length(t.load) > 1 % if there's more than one participant in the file
         dataset = [1,length(t.load(1,:))]; % variable to control the while loop - left side indicates what participant dataset in the file we're up to, right side indicates number of datasets
         while (dataset(1) <= dataset(2))
@@ -60,7 +63,11 @@ for file = 1:length(d.fileinfo) % loop through the files
         end
     end
     
-    t.alldata = [t.alldata,t.load]; % concat those into one var, so each subject is a cell
+    if p.one_participant
+        t.alldata{1} = t.load; % load that subject into one cell
+    else
+        t.alldata = [t.alldata,t.load]; % concat those into one var, so each subject is a cell
+    end
     
 end
 d.alldata = t.alldata; % save all the data
@@ -70,6 +77,7 @@ for subject = 1:length(t.alldata) % loop through each subject
     
     t.this_subj_data = t.alldata{subject};
     
+    warning('if you get an error on one of these next operations, you probably need to check whether you imported participants properly (e.g. turn on/off p.one_participant)')
     t.id = t.this_subj_data{1}.unique_id; % since we generated unique ids we'll pull these in
     
     % lets get a code for button press
@@ -91,26 +99,60 @@ for subject = 1:length(t.alldata) % loop through each subject
         
         t.current_trial = t.this_subj_data{trial};
         
+        if isfield(t.current_trial, 'rule_values')
+            t.rule_values = t.current_trial.rule_values;
+        end
+        if isfield(t.current_trial, 'rule_easy_dots')
+            t.easy_dots_rule_value = t.current_trial.rule_easy_dots;
+        end
+        if isfield(t.current_trial, 'rule_hard_dots')
+            t.hard_dots_rule_value = t.current_trial.rule_hard_dots;
+        end
+        if isfield(t.current_trial, 'coherence_values')
+            t.coherence_values = t.current_trial.coherence_values;
+        end
+        
         % pull stimulus arrays from start screen trials
         if isfield(t.current_trial, 'coh_stim_array')
             t.stim_array = t.current_trial.coh_stim_array;
             t.coh.stim_array = [];
             for i = 1:length(t.stim_array)
-                t.coh.stim_array = [t.coh.stim_array,t.stim_array{i}];
+                t.coh.stim_array{i} = [t.coh.stim_array,t.stim_array(i)];
             end; clear i;
         elseif isfield(t.current_trial, 'rule_stim_array')
             t.stim_array = t.current_trial.rule_stim_array;
             t.rule.stim_array = [];
             for i = 1:length(t.stim_array)
-                t.rule.stim_array = [t.rule.stim_array,t.stim_array{i}];
+                t.rule.stim_array{i} = [t.rule.stim_array,t.stim_array(i)];
             end; clear i;
         elseif  isfield(t.current_trial, 'exp_stim_array')
             t.stim_array = t.current_trial.exp_stim_array;
             t.exp.stim_array = [];
             for i = 1:length(t.stim_array)
-                t.exp.stim_array = [t.exp.stim_array,t.stim_array{i}];
+                t.exp.stim_array{i} = [t.exp.stim_array,t.stim_array(i)];
             end; clear i;
+            % so now we need to do something to sort out the erroneous match
+            % difficulty sorting
+            for i = 1:length(t.exp.stim_array)
+                t.match_distances(i) = t.exp.stim_array{1,i}.match_dist_cue_dir;
+            end
+            t.match_distances_rounded = unique(round(t.match_distances,1));
+            if length(t.match_distances_rounded) ~= length(unique(t.match_distances))
+                warning('javascript has spawned multiple match distances - your matching difficulty coding will be wrong, because it was coded using min/max. recoding now')
+                disp('unique match distances:')
+                disp(unique(t.match_distances))
+                disp('rounded match distances:')
+                disp(t.match_distances_rounded)
+                for i = 1:length(t.exp.stim_array)
+                    if round( t.exp.stim_array{1,i}.match_dist_cue_dir,1) == min(t.match_distances_rounded) || round( t.exp.stim_array{1,i}.match_dist_cue_dir,1) == max(t.match_distances_rounded)
+                    t.exp.stim_array{1,i}.match_difficulty = 1;
+                    else
+                        t.exp.stim_array{1,i}.match_difficulty = 2;
+                    end
+                end
+            end
         end % end stimulus array sorter
+        
         
         % only deal with trials that are labelled with experiment part
         if isfield(t.current_trial, 'experiment_part')
@@ -129,9 +171,15 @@ for subject = 1:length(t.alldata) % loop through each subject
                 t.coh.correct(t.coh_count) = t.current_trial.correct;
                 t.coh.direction(t.coh_count) = t.current_trial.coherent_direction;
                 
-            elseif strcmp(t.current_trial.experiment_part, 'ruletest_rdk')
+            elseif strcmp(t.current_trial.experiment_part, 'ruletest_rdk_easy') || strcmp(t.current_trial.experiment_part, 'ruletest_rdk_hard')
                 % just get the rdk trials for rule test trials
                 t.rule_count = t.rule_count+1;
+                
+                if strcmp(t.current_trial.experiment_part, 'ruletest_rdk_easy')
+                    t.rule.coherence(t.rule_count) = 1;
+                elseif strcmp(t.current_trial.experiment_part, 'ruletest_rdk_hard')
+                    t.rule.coherence(t.rule_count) = 2;
+                end
                 
                 t.rule.rt(t.rule_count) = t.current_trial.rt;
                 if isempty(find(t.current_trial.key_press == t.keycode))
@@ -166,6 +214,10 @@ for subject = 1:length(t.alldata) % loop through each subject
     d.subjects(subject).coh = t.coh;
     d.subjects(subject).rule = t.rule;
     d.subjects(subject).exp = t.exp;
+    d.subjects(subject).rule_values = t.rule_values;
+    d.subjects(subject).hard_dots_rule_value = t.hard_dots_rule_value;
+    d.subjects(subject).easy_dots_rule_value = t.easy_dots_rule_value;
+    d.subjects(subject).coherence_values = t.coherence_values;
 
     disp('*coherence*')
     disp('accuracy (low coh/hard threshold is .9, high coh/easy threshold is .7)')
@@ -224,7 +276,7 @@ for subject = 1:length(t.alldata) % loop through each subject
             disp('hard:')
             disp(t.coh_hard)
         end
-        if plot_match
+        if p.plot_match
             disp('*matching thresholds*')
             disp('easy:')
             disp(t.match_easy)

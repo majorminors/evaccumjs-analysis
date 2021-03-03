@@ -57,13 +57,14 @@ for i = 1:length(input_data.stim_array)
     end
 end
 
+%input_data.coherence == block
 
 for block = 1:num_blocks
     trials_start = num_trials_per_block*block-(num_trials_per_block-1);
     trials_end = num_trials_per_block*block;
-    rule_point_values(:,:,block) = sort(unique(all_rule_point_values(:,trials_start:trials_end))); % cull to unique values only, and sort in order
-    correct_rts(:,:,block) = mean(all_rts(:,trials_start:trials_end),2,'omitnan');
-    accuracy(:,:,block) = all_accuracy(:,trials_start:trials_end);
+    rule_point_values(1,:,block) = sort(unique(all_rule_point_values(input_data.coherence == block))); % cull to unique values only, and sort in order
+    correct_rts(:,:,block) = mean(all_rts(:,input_data.coherence == block),2,'omitnan');
+    accuracy(:,:,block) = all_accuracy(:,input_data.coherence == block);
     for i = 1:length(accuracy(:,1,block))
        psignifit_array(i,1,block) = rule_point_values(:,i,block);
        psignifit_array(i,2,block) = sum(accuracy(i,:,block),'omitnan');
@@ -76,6 +77,9 @@ end
 psignifit_array(:,1,3) = psignifit_array(:,1,1);
 psignifit_array(:,2,3) = psignifit_array(:,2,1)+psignifit_array(:,2,2);
 psignifit_array(:,3,3) = psignifit_array(:,3,1)+psignifit_array(:,3,2);
+data_array = psignifit_array(:,:,1); jsave([save_file,'_psignifit_array_Er_',num2str(subjectid),'.json'],'vars',{'data_array'}); clear data_array;
+data_array = psignifit_array(:,:,2); jsave([save_file,'_psignifit_array_Hr_',num2str(subjectid),'.json'],'vars',{'data_array'}); clear data_array;
+
 
 % Note: the psignifit tool only goes low to high, so if as in this case the
 %       values of your stimulus level goes high to low, then you can flip
