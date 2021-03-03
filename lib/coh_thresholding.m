@@ -54,6 +54,8 @@ for i = 1:length(accuracy(:,1))
 end
 psignifit_array(:,3) = sum(~isnan(accuracy),2);
 
+data_array = psignifit_array; jsave([save_file,'_psignifit_array_coh_',num2str(subjectid),'.json'],'vars',{'data_array'}); clear data_array;
+
 % summary is four rows:
 %   1) point condition
 %   2) coherence value
