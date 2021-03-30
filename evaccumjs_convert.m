@@ -14,7 +14,7 @@ p = struct(); % keep some of our parameters tidy
 d = struct(); % set up a structure for the data info
 t = struct(); % set up a structure for temp data
 
-p.file_control = [-2, -2, -2, 1]; % for each file, 1 = one participant, 0 = multiple, -1 = unknown, -2 = skip
+p.file_control = 1; % for each file, 1 = one participant, 0 = multiple, -1 = unknown, -2 = skip
 p.plot_norms = 0;
 p.skip_check_pp = 1;
 p.plot_coh = 0;
@@ -32,7 +32,7 @@ p.skip_check_lbacont = 0;
 
 % set up variables
 rootdir = pwd; %% root directory - used to inform directory mappings
-datadir = fullfile(rootdir,'data/behav_4'); % location of data
+datadir = fullfile(rootdir,'data/behav_5'); % location of data
 p.savefilename = 'processed_data'; % savefile for all data
 figdir = fullfile(datadir,'figures'); % place to save figures
 if ~exist(figdir,'dir')
@@ -53,11 +53,12 @@ d.fileinfo = dir(fullfile(datadir, p.datafilepattern)); % find all the datafiles
 t.alldata = {};
 t.skip_count = 0;
 for file = 1:length(d.fileinfo) % loop through the files
+    disp(file)
     t.path = fullfile(datadir, d.fileinfo(file).name); % get the full path to the file
     fprintf(1, 'working with %s\n', t.path); % print that so you can check
     
-    %t.load = loadjson(t.path); % load in the data
-    t.load = jsondecode(fileread(t.path));
+    t.load = loadjson(t.path); % load in the data
+    %t.load = jsondecode(fileread(t.path));   
     t.load = t.load';
     if p.file_control(file) == -1
         disp(t.load)
@@ -97,171 +98,189 @@ for subject = 1:length(t.alldata) % loop through each subject
     
     t.this_subj_data = t.alldata{subject};
     
-    warning('if you get an error on one of these next operations, you probably need to check whether you imported participants properly (e.g. turn on/off one participant in p.file_control)')
-    t.id = t.this_subj_data{1}.unique_id; % since we generated unique ids we'll pull these in
-    t.coh_psignifit_array = t.this_subj_data{1}.coh_data_array.data_array;
-    t.rule_ecoh_psignifit_array = t.this_subj_data{1}.easy_dots_rule_data_array.data_array;
-%     t.coh_psignifit_array_updated = t.this_subj_data{1}.coh_data_array_updated.data_array;
-    t.rule_hcoh_psignifit_array = t.this_subj_data{1}.hard_dots_rule_data_array.data_array;
+    
+    t.id = t.this_subj_data{1}.app_identifier_string; % since we generated unique ids we'll pull these in
+    
+%     t.coh_psignifit_array = t.this_subj_data{1}.coh_data_array.data_array;
+%     t.rule_ecoh_psignifit_array = t.this_subj_data{1}.easy_dots_rule_data_array.data_array;
+% %     t.coh_psignifit_array_updated = t.this_subj_data{1}.coh_data_array_updated.data_array;
+%     t.rule_hcoh_psignifit_array = t.this_subj_data{1}.hard_dots_rule_data_array.data_array;
     
     % lets get a code for button press
-    t.button_condition = t.this_subj_data{1}.condition;
+    t.button_condition = t.this_subj_data{1}.condition_bin;
     % condition 1 : respkeys o,p
     % condition 2 : respkeys p,o
     % keypress is JS, so 79 is o and 80 is p
-    if t.button_condition{2} == 1
+    if t.button_condition == 0
         t.keycode = [79,80];
-    elseif t.button_condition{2} == 2
+    elseif t.button_condition == 1
         t.keycode = [80,79];
     end
-    % data is all in a row, so we go through each col and pull the values we want
+    
     t.coh_count = 0;
     t.rule_count = 0;
     t.coh_ang_count = 0;
     t.exp_count = 0;
-    for trial = 1:length(t.this_subj_data)
-        clear t.current_trial;
-        
-        t.current_trial = t.this_subj_data{trial};
-        
-        if isfield(t.current_trial, 'rule_values')
-            t.rule_values = t.current_trial.rule_values;
-        end
-        if isfield(t.current_trial, 'rule_easy_dots')
-            t.easy_dots_rule_value = t.current_trial.rule_easy_dots;
-        end
-        if isfield(t.current_trial, 'rule_hard_dots')
-            t.hard_dots_rule_value = t.current_trial.rule_hard_dots;
-        end
-        if isfield(t.current_trial, 'coherence_values')
-            t.coherence_values = t.current_trial.coherence_values;
-        end
-        if isfield(t.current_trial, 'updated_coherence_values')
-            t.updated_coherence_values = t.current_trial.updated_coherence_values;
-        end
-        
-        % pull stimulus arrays from start screen trials
-        if isfield(t.current_trial, 'coh_stim_array')
-            t.stim_array = t.current_trial.coh_stim_array;
-            t.coh.stim_array = [];
-            for i = 1:length(t.stim_array)
-                t.coh.stim_array{i} = t.stim_array(i);
-            end; clear i;
-        elseif isfield(t.current_trial, 'rule_stim_array')
-            t.stim_array = t.current_trial.rule_stim_array;
-            t.rule.stim_array = [];
-            for i = 1:length(t.stim_array(:,1))
-                for ii = 1:length(t.stim_array)
-                    tmp{ii} = t.stim_array(i,ii);
-                end; clear ii;
-                t.rule.stim_array = [t.rule.stim_array,tmp];
-            end; clear i tmp;
-        elseif isfield(t.current_trial, 'coherence_angle_array')
-            t.stim_array = t.current_trial.coherence_angle_array;
-            t.coh_ang.stim_array = [];
-            for i = 1:length(t.stim_array)
-                t.coh_ang.stim_array{i} = t.stim_array(i);
-            end; clear i;
-        elseif  isfield(t.current_trial, 'exp_stim_array')
-            t.stim_array = t.current_trial.exp_stim_array;
-            t.exp.stim_array = [];
-            for i = 1:length(t.stim_array(:,1))
-                for ii = 1:length(t.stim_array)
-                    tmp{ii} = t.stim_array(i,ii);
-                end; clear ii;
-                t.exp.stim_array = [t.exp.stim_array,tmp];
-            end; clear i tmp;
-            
-            % so now we need to do something to sort out the erroneous match
-            % difficulty sorting
-            for i = 1:length(t.exp.stim_array)
-                t.match_distances(i) = t.exp.stim_array{1,i}.match_dist_cue_dir;
-            end
-            t.match_distances_rounded = unique(round(t.match_distances,1));
-            if length(t.match_distances_rounded) ~= length(unique(t.match_distances))
-                warning('javascript has spawned multiple match distances - your matching difficulty coding will be wrong, because it was coded using min/max. recoding now')
-                disp('unique match distances:')
-                disp(unique(t.match_distances))
-                disp('rounded match distances:')
-                disp(t.match_distances_rounded)
-                for i = 1:length(t.exp.stim_array)
-                    if round( t.exp.stim_array{1,i}.match_dist_cue_dir,1) == min(t.match_distances_rounded) || round( t.exp.stim_array{1,i}.match_dist_cue_dir,1) == max(t.match_distances_rounded)
-                        t.exp.stim_array{1,i}.match_difficulty = 1;
-                    else
-                        t.exp.stim_array{1,i}.match_difficulty = 2;
+    % components all in a row, so loop through each
+    for component = 1:length(t.this_subj_data)
+        %         1) JATOS set up: has app id and condition
+        %         2) experiment set up with consent and demographics
+        %         3) instructions
+        %         4) coherence thresholdhing 1
+        %         5) decision thresholding
+        %         6) coherence thresholding 2
+        %         7) experiment
+        %         8) experiment finish (nothing really here)
+        fn_firstlevel = fieldnames(t.this_subj_data{component}); % get field names for the component
+        for componentfield=1:numel(fn_firstlevel) % loop through each field
+            if( isstruct(t.this_subj_data{component}.(fn_firstlevel{componentfield})) ) % if the field is a structure
+                clear t.current_trial;
+                %                 fn_secondlevel = fieldnames(t.this_subj_data{component}.(fn_firstlevel{componentfield}));
+                %                 for componenttrial=1:numel(fn_secondlevel)
+                %                     disp(componenttrial)
+                %                 end
+                t.current_trial = t.this_subj_data{component}.(fn_firstlevel{componentfield}); % get the information for that trial
+                
+                if isfield(t.current_trial, 'rule_values')
+                    t.rule_values = t.current_trial.rule_values;
+                end
+                if isfield(t.current_trial, 'rule_easy_dots')
+                    t.easy_dots_rule_value = t.current_trial.rule_easy_dots;
+                end
+                if isfield(t.current_trial, 'rule_hard_dots')
+                    t.hard_dots_rule_value = t.current_trial.rule_hard_dots;
+                end
+                if isfield(t.current_trial, 'coherence_values')
+                    t.coherence_values = t.current_trial.coherence_values;
+                end
+                if isfield(t.current_trial, 'updated_coherence_values')
+                    t.updated_coherence_values = t.current_trial.updated_coherence_values;
+                end
+                
+                % pull stimulus arrays from start screen trials
+                if isfield(t.current_trial, 'coh_stim_array')
+                    t.stim_array = t.current_trial.coh_stim_array;
+                    t.coh.stim_array = [];
+                    for i = 1:length(t.stim_array)
+                        tmp = t.stim_array{i};
+                        t.coh.stim_array = [t.coh.stim_array,tmp];
+                    end; clear i tmp;
+                elseif isfield(t.current_trial, 'rule_stim_array')
+                    t.stim_array = t.current_trial.rule_stim_array;
+                    t.rule.stim_array = [];
+                    for i = 1:length(t.stim_array(:,1))
+                        tmp = t.stim_array{i};
+                        t.rule.stim_array = [t.rule.stim_array,tmp];
+                    end; clear i tmp;
+                elseif isfield(t.current_trial, 'coherence_angle_array')
+                    t.stim_array = t.current_trial.coherence_angle_array;
+                    t.coh_ang.stim_array = [];
+                    for i = 1:length(t.stim_array)
+                        tmp = t.stim_array{i};
+                        t.coh_ang.stim_array = [t.coh_ang.stim_array,tmp];
+                    end; clear i tmp;
+                elseif  isfield(t.current_trial, 'exp_stim_array')
+                    t.stim_array = t.current_trial.exp_stim_array;
+                    t.exp.stim_array = [];
+                    
+                    for i = 1:length(t.stim_array)
+                        tmp = t.stim_array{i};
+                        t.exp.stim_array = [t.exp.stim_array,tmp];
+                    end; clear i tmp;
+                    
+                    % so now we need to do something to sort out the erroneous match
+                    % difficulty sorting
+                    for i = 1:length(t.exp.stim_array)
+                        t.match_distances(i) = t.exp.stim_array{1,i}.match_dist_cue_dir;
                     end
-                end
-            end
-        end % end stimulus array sorter
-        
-        
-        % only deal with trials that are labelled with experiment part
-        if isfield(t.current_trial, 'experiment_part')
-            
-            % filter rdk trials
-            if strcmp(t.current_trial.experiment_part, 'cohtest_rdk')
-                % just get the rdk trials for coherence test trials
-                t.coh_count = t.coh_count+1;
+                    t.match_distances_rounded = unique(round(t.match_distances,1));
+                    if length(t.match_distances_rounded) ~= length(unique(t.match_distances))
+                        warning('javascript has spawned multiple match distances - your matching difficulty coding will be wrong, because it was coded using min/max. recoding now')
+                        disp('unique match distances:')
+                        disp(unique(t.match_distances))
+                        disp('rounded match distances:')
+                        disp(t.match_distances_rounded)
+                        for i = 1:length(t.exp.stim_array)
+                            if round( t.exp.stim_array{1,i}.match_dist_cue_dir,1) == min(t.match_distances_rounded) || round( t.exp.stim_array{1,i}.match_dist_cue_dir,1) == max(t.match_distances_rounded)
+                                t.exp.stim_array{1,i}.match_difficulty = 1;
+                            else
+                                t.exp.stim_array{1,i}.match_difficulty = 2;
+                            end
+                        end
+                    end
+                end % end stimulus array sorter
                 
-                t.coh.rt(t.coh_count) = t.current_trial.rt;
-                if isempty(find(t.current_trial.key_press == t.keycode))
-                    t.coh.button(t.coh_count) = -1;
-                else
-                    t.coh.button(t.coh_count) = find(t.current_trial.key_press == t.keycode);
-                end
-                t.coh.correct(t.coh_count) = t.current_trial.correct;
-                t.coh.direction(t.coh_count) = t.current_trial.coherent_direction;
                 
-            elseif strcmp(t.current_trial.experiment_part, 'ruletest_rdk_easy') || strcmp(t.current_trial.experiment_part, 'ruletest_rdk_hard')
-                % just get the rdk trials for rule test trials
-                t.rule_count = t.rule_count+1;
+                % only deal with trials that are labelled with experiment part
+                if isfield(t.current_trial, 'experiment_part')
+                    
+                    % filter rdk trials
+                    if strcmp(t.current_trial.experiment_part, 'cohtest_rdk')
+                        % just get the rdk trials for coherence test trials
+                        t.coh_count = t.coh_count+1;
+                        
+                        t.coh.rt(t.coh_count) = t.current_trial.rt;
+                        if isempty(find(t.current_trial.key_press == t.keycode))
+                            t.coh.button(t.coh_count) = -1;
+                        else
+                            t.coh.button(t.coh_count) = find(t.current_trial.key_press == t.keycode);
+                        end
+                        t.coh.correct(t.coh_count) = t.current_trial.correct;
+                        t.coh.direction(t.coh_count) = t.current_trial.coherent_direction;
+                        
+                    elseif strcmp(t.current_trial.experiment_part, 'ruletest_rdk_easy') || strcmp(t.current_trial.experiment_part, 'ruletest_rdk_hard')
+                        % just get the rdk trials for rule test trials
+                        t.rule_count = t.rule_count+1;
+                        
+                        if strcmp(t.current_trial.experiment_part, 'ruletest_rdk_easy')
+                            t.rule.coherence(t.rule_count) = 1;
+                        elseif strcmp(t.current_trial.experiment_part, 'ruletest_rdk_hard')
+                            t.rule.coherence(t.rule_count) = 2;
+                        end
+                        
+                        t.rule.rt(t.rule_count) = t.current_trial.rt;
+                        if isempty(find(t.current_trial.key_press == t.keycode))
+                            t.rule.button(t.rule_count) = -1;
+                        else
+                            t.rule.button(t.rule_count) = find(t.current_trial.key_press == t.keycode);
+                        end
+                        t.rule.correct(t.rule_count) = t.current_trial.correct;
+                        t.rule.direction(t.rule_count) = t.current_trial.coherent_direction;
+                        
+                    elseif strcmp(t.current_trial.experiment_part, 'cohtest_angle_rdk')
+                        % just get the rdk trials for coherence test trials
+                        t.coh_ang_count = t.coh_ang_count+1;
+                        
+                        t.coh_ang.rt(t.coh_ang_count) = t.current_trial.rt;
+                        if isempty(find(t.current_trial.key_press == t.keycode))
+                            t.coh_ang.button(t.coh_ang_count) = -1;
+                        else
+                            t.coh_ang.button(t.coh_ang_count) = find(t.current_trial.key_press == t.keycode);
+                        end
+                        t.coh_ang.correct(t.coh_ang_count) = t.current_trial.correct;
+                        t.coh_ang.direction(t.coh_ang_count) = t.current_trial.coherent_direction;
+                        
+                    elseif strcmp(t.current_trial.experiment_part, 'experiment_rdk')
+                        % just get the rdk trials for experimental trials
+                        t.exp_count = t.exp_count+1;
+                        
+                        t.exp.rt(t.exp_count) = t.current_trial.rt;
+                        if isempty(find(t.current_trial.key_press == t.keycode))
+                            t.exp.button(t.exp_count) = -1;
+                        else
+                            t.exp.button(t.exp_count) = find(t.current_trial.key_press == t.keycode);
+                        end
+                        t.exp.correct(t.exp_count) = t.current_trial.correct;
+                        t.exp.direction(t.exp_count) = t.current_trial.coherent_direction;
+                        
+                    end % end rdk trial filtering
+                    
+                end % end experiment part filtering
                 
-                if strcmp(t.current_trial.experiment_part, 'ruletest_rdk_easy')
-                    t.rule.coherence(t.rule_count) = 1;
-                elseif strcmp(t.current_trial.experiment_part, 'ruletest_rdk_hard')
-                    t.rule.coherence(t.rule_count) = 2;
-                end
-                
-                t.rule.rt(t.rule_count) = t.current_trial.rt;
-                if isempty(find(t.current_trial.key_press == t.keycode))
-                    t.rule.button(t.rule_count) = -1;
-                else
-                    t.rule.button(t.rule_count) = find(t.current_trial.key_press == t.keycode);
-                end
-                t.rule.correct(t.rule_count) = t.current_trial.correct;
-                t.rule.direction(t.rule_count) = t.current_trial.coherent_direction;
-                
-            elseif strcmp(t.current_trial.experiment_part, 'cohtest_angle_rdk')
-                % just get the rdk trials for coherence test trials
-                t.coh_ang_count = t.coh_ang_count+1;
-                
-                t.coh_ang.rt(t.coh_ang_count) = t.current_trial.rt;
-                if isempty(find(t.current_trial.key_press == t.keycode))
-                    t.coh_ang.button(t.coh_ang_count) = -1;
-                else
-                    t.coh_ang.button(t.coh_ang_count) = find(t.current_trial.key_press == t.keycode);
-                end
-                t.coh_ang.correct(t.coh_ang_count) = t.current_trial.correct;
-                t.coh_ang.direction(t.coh_ang_count) = t.current_trial.coherent_direction;
-                
-            elseif strcmp(t.current_trial.experiment_part, 'experiment_rdk')
-                % just get the rdk trials for experimental trials
-                t.exp_count = t.exp_count+1;
-                
-                t.exp.rt(t.exp_count) = t.current_trial.rt;
-                if isempty(find(t.current_trial.key_press == t.keycode))
-                    t.exp.button(t.exp_count) = -1;
-                else
-                    t.exp.button(t.exp_count) = find(t.current_trial.key_press == t.keycode);
-                end
-                t.exp.correct(t.exp_count) = t.current_trial.correct;
-                t.exp.direction(t.exp_count) = t.current_trial.coherent_direction;
-                
-            end % end rdk trial filtering
-            
-        end % end experiment part filtering
-        
-    end % end trial loop
+            end % end field exploration
+        end; clear componentfield % end component field loop
+    end; clear component % end component loop
+
     
     % collate results
     d.subjects(subject).id = t.id;
