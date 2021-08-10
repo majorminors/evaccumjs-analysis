@@ -18,6 +18,7 @@ p.one_participant = 1; % your script doesn't work for one participant, so switch
 p.plot_norms = 1;
 p.skip_check_pp = 0;
 p.plot_coh = 1;
+p.plot_coh_ang = 1;
 p.plot_match = 1;
 p.skip_check_lba = 0;
 p.plot_rt_hist = 1;
@@ -117,17 +118,17 @@ for subject = 1:length(t.alldata) % loop through each subject
         if isfield(t.this_component, 'rule_values')
             t.rule_values = t.this_component.rule_values;
         end
-        if isfield(t.this_component, 'rule_easy_dots')
-            t.easy_dots_rule_value = t.this_component.rule_easy_dots;
-        end
-        if isfield(t.this_component, 'rule_hard_dots')
-            t.hard_dots_rule_value = t.this_component.rule_hard_dots;
-        end
+%         if isfield(t.this_component, 'rule_easy_dots')
+%             t.easy_dots_rule_value = t.this_component.rule_easy_dots;
+%         end
+%         if isfield(t.this_component, 'rule_hard_dots')
+%             t.hard_dots_rule_value = t.this_component.rule_hard_dots;
+%         end
         if isfield(t.this_component, 'coherence_values')
             t.coherence_values = t.this_component.coherence_values;
         end
         if isfield(t.this_component, 'updated_coherence_values')
-            t.coherence_values = t.this_component.coherence_values;
+            t.updated_coherence_values = t.this_component.updated_coherence_values;
         end
         
         % now because some weird interaction between jspsych and jatos and
@@ -146,6 +147,7 @@ for subject = 1:length(t.alldata) % loop through each subject
     % data is all in a row, so we go through each col and pull the values we want
     t.coh_count = 0;
     t.rule_count = 0;
+    t.coh_ang_count = 0;
     t.exp_count = 0;
     for trial = 1:length(t.this_subj_trials)
         clear t.current_trial;
@@ -157,25 +159,25 @@ for subject = 1:length(t.alldata) % loop through each subject
             t.stim_array = t.current_trial.coh_stim_array;
             t.coh.stim_array = [];
             for i = 1:length(t.stim_array)
-                t.coh.stim_array{i} = [t.coh.stim_array,t.stim_array(i)];
+                t.coh.stim_array = [t.coh.stim_array,t.stim_array{i}];
             end; clear i;
         elseif isfield(t.current_trial, 'rule_stim_array')
             t.stim_array = t.current_trial.rule_stim_array;
             t.rule.stim_array = [];
             for i = 1:length(t.stim_array)
-                t.rule.stim_array{i} = [t.rule.stim_array,t.stim_array(i)];
+                t.rule.stim_array = [t.rule.stim_array,t.stim_array{i}];
             end; clear i;
         elseif isfield(t.current_trial, 'coherence_angle_array')
             t.stim_array = t.current_trial.coherence_angle_array;
-            t.rule.stim_array = [];
+            t.coh_ang.stim_array = [];
             for i = 1:length(t.stim_array)
-                t.rule.stim_array{i} = [t.coherence_angle_array,t.stim_array(i)];
+                t.coh_ang.stim_array = [t.coh_ang.stim_array,t.stim_array{i}];
             end; clear i;
         elseif  isfield(t.current_trial, 'exp_stim_array')
             t.stim_array = t.current_trial.exp_stim_array;
             t.exp.stim_array = [];
             for i = 1:length(t.stim_array)
-                t.exp.stim_array{i} = [t.exp.stim_array,t.stim_array(i)];
+                t.exp.stim_array = [t.exp.stim_array,t.stim_array{i}];
             end; clear i;
             % so now we need to do something to sort out the erroneous match
             % difficulty sorting
@@ -236,6 +238,19 @@ for subject = 1:length(t.alldata) % loop through each subject
                 t.rule.correct(t.rule_count) = t.current_trial.correct;
                 t.rule.direction(t.rule_count) = t.current_trial.coherent_direction;
                 
+            elseif strcmp(t.current_trial.experiment_part, 'cohtest_angle_rdk')
+                % just get the rdk trials for coherence test trials
+                t.coh_ang_count = t.coh_ang_count+1;
+                
+                t.coh_ang.rt(t.coh_ang_count) = t.current_trial.rt;
+                if isempty(find(t.current_trial.key_press == t.keycode))
+                    t.coh_ang.button(t.coh_ang_count) = -1;
+                else
+                    t.coh_ang.button(t.coh_ang_count) = find(t.current_trial.key_press == t.keycode);
+                end
+                t.coh_ang.correct(t.coh_ang_count) = t.current_trial.correct;
+                t.coh_ang.direction(t.coh_ang_count) = t.current_trial.coherent_direction;
+                
             elseif strcmp(t.current_trial.experiment_part, 'experiment_rdk')
                 % just get the rdk trials for experimental trials
                 t.exp_count = t.exp_count+1;
@@ -259,13 +274,15 @@ for subject = 1:length(t.alldata) % loop through each subject
     d.subjects(subject).id = t.id;
     d.subjects(subject).coh = t.coh;
     d.subjects(subject).rule = t.rule;
+    d.subjects(subject).coh_ang = t.coh_ang;
     d.subjects(subject).exp = t.exp;
     d.subjects(subject).rule_values = t.rule_values;
-    d.subjects(subject).hard_dots_rule_value = t.hard_dots_rule_value;
-    d.subjects(subject).easy_dots_rule_value = t.easy_dots_rule_value;
+%     d.subjects(subject).hard_dots_rule_value = t.hard_dots_rule_value;
+%     d.subjects(subject).easy_dots_rule_value = t.easy_dots_rule_value;
     d.subjects(subject).coherence_values = t.coherence_values;
+    d.subjects(subject).updated_coherence_values = t.updated_coherence_values;
 
-    disp('*coherence*')
+    disp('*coherence thresholding one*')
     disp('accuracy (low coh/hard threshold is .9, high coh/easy threshold is .7)')
     disp(accthis(d.subjects(subject).coh.correct))
     disp('num invalid')
@@ -288,6 +305,18 @@ for subject = 1:length(t.alldata) % loop through each subject
         figure; normplot(d.subjects(subject).rule.rt)
         title('match thresholding')
         export_fig(fullfile(figdir,strcat(num2str(subject),'_match_normplot.jpeg')),'-transparent')
+    end
+        disp('*coherence thresholding two*')
+    disp('accuracy (low coh/hard threshold is .9, high coh/easy threshold is .7)')
+    disp(accthis(d.subjects(subject).coh_ang.correct))
+    disp('num invalid')
+    disp(length(find(d.subjects(subject).coh_ang.rt == -1)))
+    disp('num fast responses')
+    disp(length(find(d.subjects(subject).coh_ang.rt >=0 & d.subjects(subject).coh_ang.rt < 400)))
+    if p.plot_norms
+        figure; normplot(d.subjects(subject).coh_ang.rt)
+        title('coherence thresholding')
+        export_fig(fullfile(figdir,strcat(num2str(subject),'_coh_ang_normplot.jpeg')),'-transparent')
     end
     disp('*experiment*')
     disp('accuracy (.6 is a floor effect)')
@@ -315,8 +344,10 @@ for subject = 1:length(t.alldata) % loop through each subject
         
         if p.plot_coh; [t.coh_easy,t.coh_hard] = coh_thresholding(d.subjects(subject).coh,figdir,p.save_file,subject); end
         if p.plot_match; [t.match_easy,t.match_hard,t.match_summary] = match_thresholding(d.subjects(subject).rule,figdir,p.save_file,subject); end
+        if p.plot_coh_ang; [t.coh_ang_easy,t.coh_ang_hard] = coh_thresholding(d.subjects(subject).coh_ang,figdir,p.save_file,subject); end
+
         if p.plot_coh
-            disp('*coherence thresholds*')
+            disp('*coherence thresholds (first)*')
             disp('easy:')
             disp(t.coh_easy)
             disp('hard:')
@@ -332,6 +363,13 @@ for subject = 1:length(t.alldata) % loop through each subject
             disp(t.match_hard)
             disp('mean rt, correct trials, hard condition:')
             disp(mean(t.match_summary(6,:)))
+        end
+        if p.plot_coh_ang
+            disp('*coherence thresholds (second)*')
+            disp('easy:')
+            disp(t.coh_ang_easy)
+            disp('hard:')
+            disp(t.coh_ang_hard)
         end
 
         if p.skip_check_lba
