@@ -75,41 +75,82 @@ for subject = 1:length(t.alldata) % loop through each subject
     fprintf(1, 'working with subject %1.0f of %1.0f\n', subject, length(t.alldata)); % print that so you can check
     
     t.this_subj_data = t.alldata{subject};
-    
     warning('if you get an error on one of these next operations, you probably need to check whether you imported participants properly (e.g. turn on/off p.one_participant)')
-    t.id = t.this_subj_data{1}.unique_id; % since we generated unique ids we'll pull these in
-    
-    % lets get a code for button press
-    t.button_condition = t.this_subj_data{1}.condition;
-    % condition 1 : respkeys o,p
-    % condition 2 : respkeys p,o
-    % keypress is JS, so 79 is o and 80 is p
-    if t.button_condition{2} == 1
-        t.keycode = [79,80];
-    elseif t.button_condition{2} == 2
-        t.keycode = [80,79];
+   
+    t.this_subj_trials = []; % init this so we can pull the trials out of each component
+    % now we loop through the components
+    for component = 1:numel(t.this_subj_data)
+        t.this_component = t.this_subj_data{component};
+        
+        % start off looking for prolific (or other) id
+        if isfield(t.this_component,'app_identifier_string')
+            if isfield(t,'id')
+                if ~strcmp(t.id,t.this_component.app_identifier_string) % error if the ids aren't the same in every component
+                    error('you seem to have multiple app id strings (i.e. multiple participant results) confused')
+                end
+            else % otherwise create a field to hold the id!
+                t.id = t.this_component.app_identifier_string;
+            end
+        end
+        
+        % lets get a code for button press
+        if isfield(t.this_component,'condition')
+            if isfield(t,'button_condition')
+                if t.button_condition{2} ~= t.this_component.condition{2} % check that the condition code numbers match for each component
+                    error('you seem to have multiple button conditions (i.e. multiple participant results) confused') % else error
+                end
+            else % create a field to hold the button condition information
+                t.button_condition = t.this_component.condition;
+                % then we need to get a keycode so make that too
+                % condition 1 : respkeys o,p
+                % condition 2 : respkeys p,o
+                % keypress is JS, so 79 is o and 80 is p
+                if t.button_condition{2} == 1
+                    t.keycode = [79,80];
+                elseif t.button_condition{2} == 2
+                    t.keycode = [80,79];
+                end
+            end
+        end
+        
+        % get values of stuff
+        if isfield(t.this_component, 'rule_values')
+            t.rule_values = t.this_component.rule_values;
+        end
+        if isfield(t.this_component, 'rule_easy_dots')
+            t.easy_dots_rule_value = t.this_component.rule_easy_dots;
+        end
+        if isfield(t.this_component, 'rule_hard_dots')
+            t.hard_dots_rule_value = t.this_component.rule_hard_dots;
+        end
+        if isfield(t.this_component, 'coherence_values')
+            t.coherence_values = t.this_component.coherence_values;
+        end
+        if isfield(t.this_component, 'updated_coherence_values')
+            t.coherence_values = t.this_component.coherence_values;
+        end
+        
+        % now because some weird interaction between jspsych and jatos and
+        % components makes the trials get saved in a completely
+        % unintelligible field, we loop through and put all the trials in a
+        % 'row'
+        fn = fieldnames(t.this_component);
+        for thisField = 1:numel(fn)
+            if( contains(fn{thisField},'x0x') )
+                t.this_subj_trials = [t.this_subj_trials,{t.this_component.(fn{thisField})}];
+            end
+        end; clear thisField fn
     end
+
+
     % data is all in a row, so we go through each col and pull the values we want
     t.coh_count = 0;
     t.rule_count = 0;
     t.exp_count = 0;
-    for trial = 1:length(t.this_subj_data)
+    for trial = 1:length(t.this_subj_trials)
         clear t.current_trial;
         
-        t.current_trial = t.this_subj_data{trial};
-        
-        if isfield(t.current_trial, 'rule_values')
-            t.rule_values = t.current_trial.rule_values;
-        end
-        if isfield(t.current_trial, 'rule_easy_dots')
-            t.easy_dots_rule_value = t.current_trial.rule_easy_dots;
-        end
-        if isfield(t.current_trial, 'rule_hard_dots')
-            t.hard_dots_rule_value = t.current_trial.rule_hard_dots;
-        end
-        if isfield(t.current_trial, 'coherence_values')
-            t.coherence_values = t.current_trial.coherence_values;
-        end
+        t.current_trial = t.this_subj_trials{trial};
         
         % pull stimulus arrays from start screen trials
         if isfield(t.current_trial, 'coh_stim_array')
@@ -123,6 +164,12 @@ for subject = 1:length(t.alldata) % loop through each subject
             t.rule.stim_array = [];
             for i = 1:length(t.stim_array)
                 t.rule.stim_array{i} = [t.rule.stim_array,t.stim_array(i)];
+            end; clear i;
+        elseif isfield(t.current_trial, 'coherence_angle_array')
+            t.stim_array = t.current_trial.coherence_angle_array;
+            t.rule.stim_array = [];
+            for i = 1:length(t.stim_array)
+                t.rule.stim_array{i} = [t.coherence_angle_array,t.stim_array(i)];
             end; clear i;
         elseif  isfield(t.current_trial, 'exp_stim_array')
             t.stim_array = t.current_trial.exp_stim_array;
