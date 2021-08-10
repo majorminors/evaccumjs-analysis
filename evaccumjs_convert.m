@@ -345,10 +345,10 @@ for subject = 1:length(t.alldata) % loop through each subject
     disp('*coherence thresholding one*')
     disp('accuracy (low coh/hard threshold is .9, high coh/easy threshold is .7)')
     disp(accthis(d.subjects(subject).coh.correct))
-    disp('num invalid')
-    disp(length(find(d.subjects(subject).coh.rt == -1)))
-    disp('num fast responses')
-    disp(length(find(d.subjects(subject).coh.rt >=0 & d.subjects(subject).coh.rt < 400)))
+    disp('% invalid')
+    disp((length(find(d.subjects(subject).coh.rt == -1))/length(d.subjects(subject).coh.rt)))
+    disp('% fast responses')
+    disp((length(find(d.subjects(subject).coh.rt >=0 & d.subjects(subject).coh.rt < 400))/length(d.subjects(subject).coh.rt)))
     if p.plot_norms
         figure; normplot(d.subjects(subject).coh.rt)
         title('coherence thresholding')
@@ -357,10 +357,10 @@ for subject = 1:length(t.alldata) % loop through each subject
     disp('*rule*')
     disp('accuracy (hard threshold is .6)')
     disp(accthis(d.subjects(subject).rule.correct))
-    disp('num invalid')
-    disp(length(find(d.subjects(subject).rule.rt == -1)))
-    disp('num fast responses')
-    disp(length(find(d.subjects(subject).rule.rt >=0 & d.subjects(subject).rule.rt < 400)))
+    disp('% invalid')
+    disp((length(find(d.subjects(subject).rule.rt == -1))/length(d.subjects(subject).rule.rt)))
+    disp('% fast responses')
+    disp((length(find(d.subjects(subject).rule.rt >=0 & d.subjects(subject).rule.rt < 400))/length(d.subjects(subject).rule.rt)))
     if p.plot_norms
         figure; normplot(d.subjects(subject).rule.rt)
         title('match thresholding')
@@ -370,10 +370,10 @@ for subject = 1:length(t.alldata) % loop through each subject
     disp('*coherence second thresholding*')
     disp('accuracy (low coh/hard threshold is .9, high coh/easy threshold is .7)')
     disp(accthis(d.subjects(subject).coh_ang.correct))
-    disp('num invalid')
-    disp(length(find(d.subjects(subject).coh_ang.rt == -1)))
-    disp('num fast responses')
-    disp(length(find(d.subjects(subject).coh_ang.rt >=0 & d.subjects(subject).coh_ang.rt < 400)))
+    disp('% invalid')
+    disp((length(find(d.subjects(subject).coh_ang.rt == -1))/length(d.subjects(subject).coh_ang.rt)))
+    disp('% fast responses')
+    disp((length(find(d.subjects(subject).coh_ang.rt >=0 & d.subjects(subject).coh_ang.rt < 400))/length(d.subjects(subject).coh_ang.rt)))
     if p.plot_norms
         figure; normplot(d.subjects(subject).coh_ang.rt)
         title('coherence second thresholding')
@@ -382,10 +382,10 @@ for subject = 1:length(t.alldata) % loop through each subject
     disp('*experiment*')
     disp('accuracy (.6 is a floor effect)')
     disp(accthis(d.subjects(subject).exp.correct))
-    disp('num invalid')
-    disp(length(find(d.subjects(subject).exp.rt == -1)))
-    disp('num fast responses')
-    disp(length(find(d.subjects(subject).exp.rt >=0 & d.subjects(subject).exp.rt < 400)))
+    disp('$ invalid')
+    disp((length(find(d.subjects(subject).exp.rt == -1))/length(d.subjects(subject).exp.rt)))
+    disp('% fast responses')
+    disp((length(find(d.subjects(subject).exp.rt >=0 & d.subjects(subject).exp.rt < 400))/length(d.subjects(subject).exp.rt)))
     if p.plot_norms
         figure; normplot(d.subjects(subject).exp.rt)
         title('experiment')
@@ -404,7 +404,7 @@ for subject = 1:length(t.alldata) % loop through each subject
     if t.do_pp == 'y'
         % check thresholds
         if p.plot_coh
-            [t.coh_easy,t.coh_hard,~,t.psignifit_array] = coh_thresholding(d.subjects(subject).coh,figdir,p.save_file,subject,1);
+            [t.coh_easy,t.coh_hard,~,t.psignifit_array] = coh_thresholding(d.subjects(subject).coh,figdir,'thresholding_1',subject,1);
             if p.check_coh
                 [t.jscoh_easy,t.jscoh_hard,~,t.jscoh_psignifit_array] = coh_thresholding(t.coh_psignifit_array,figdir,p.save_file,subject,0,1);
                 disp('**checking js vs matlab psignifit for coherence**')
@@ -478,7 +478,7 @@ for subject = 1:length(t.alldata) % loop through each subject
             end
         end
         if p.plot_coh_ang
-            [t.coh_easy,t.coh_hard,~,t.psignifit_array] = coh_thresholding(d.subjects(subject).coh_ang,figdir,p.save_file,subject,1);
+            [t.coh_easy,t.coh_hard,~,t.psignifit_array] = coh_thresholding(d.subjects(subject).coh_ang,figdir,'thresholding_2',subject,1);
             if p.check_coh_ang
                 [t.jscoh_easy,t.jscoh_hard,~,t.jscoh_psignifit_array] = coh_thresholding(t.coh_psignifit_array_updated,figdir,p.save_file,subject,0,1);
                 disp('**checking js vs matlab psignifit for coherence two**')
