@@ -27,7 +27,7 @@ p.skip_check_lbacont = 0;
 
 % set up variables
 rootdir = pwd; %% root directory - used to inform directory mappings
-datadir = fullfile(rootdir,'data/behav_easy_rule_2'); % location of data
+datadir = fullfile(rootdir,'data/behav_8'); % location of data
 p.savefilename = 'processed_data'; % savefile for all data
 figdir = fullfile(datadir,'figures'); % place to save figures
 if ~exist(figdir,'dir')
@@ -48,10 +48,9 @@ for file = 1:length(d.fileinfo) % loop through the files
     t.path = fullfile(datadir, d.fileinfo(file).name); % get the full path to the file
     fprintf(1, 'working with %s\n', t.path); % print that so you can check
 
-    %t.load = loadjson(t.path); % load in the data
-    t.load = jsondecode(fileread(t.path));
+    t.load = loadjson(t.path); % load in the data
+    %t.load = jsondecode(fileread(t.path));
     t.load = t.load';
-        disp('hi')
     if length(t.load) > 1 % if there's more than one participant in the file
         dataset = [1,length(t.load(1,:))]; % variable to control the while loop - left side indicates what participant dataset in the file we're up to, right side indicates number of datasets
         while (dataset(1) <= dataset(2))
