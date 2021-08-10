@@ -1,4 +1,4 @@
-function [easy_threshold,hard_threshold,summary] = match_thresholding(input_data,save_dir,save_file,subjectid)
+function [easy_threshold,hard_threshold,summary,psignifit_array] = match_thresholding(input_data,save_dir,save_file,subjectid,save_this,preformatted_array)
 % function [easy_value,hard_value] = coh_thresholding(p,d)
 %
 % matching threshold analysis
@@ -41,69 +41,98 @@ function [easy_threshold,hard_threshold,summary] = match_thresholding(input_data
 % enter your thresholds
 low_threshold_pc = 0.6; % percent correct for your hard threshold (uses inverse of this number for easy)
 num_blocks = 2;
-num_trials_per_block = length(input_data.stim_array)/num_blocks;
 
-% makes a structure that looks like
-% | match point | number correct | number of trials |
-% and builds row-wise each iteration
-all_accuracy = NaN(10,length(input_data.stim_array)); % make array as large as (num_points,num_trials)
-all_rts = NaN(10,length(input_data.stim_array));
-for i = 1:length(input_data.stim_array)
-    % rows are rule point, cols are accuracy
-    all_accuracy(input_data.stim_array{1,i}.rule_point_code,i) = input_data.correct(1,i);
-    all_rule_point_values(i) = input_data.stim_array{1,i}.rule_value; % pull these for later
-    if all_accuracy(input_data.stim_array{1,i}.rule_point_code,i) == 1
-        all_rts(input_data.stim_array{1,i}.rule_point_code,i) = input_data.rt(1,i);
-    end
+if ~exist('save_this','var')
+    save_this = 0;
 end
 
-%input_data.coherence == block
-
-for block = 1:num_blocks
-    trials_start = num_trials_per_block*block-(num_trials_per_block-1);
-    trials_end = num_trials_per_block*block;
-    rule_point_values(1,:,block) = sort(unique(all_rule_point_values(input_data.coherence == block))); % cull to unique values only, and sort in order
-    correct_rts(:,:,block) = mean(all_rts(:,input_data.coherence == block),2,'omitnan');
-    accuracy(:,:,block) = all_accuracy(:,input_data.coherence == block);
-    for i = 1:length(accuracy(:,1,block))
-       psignifit_array(i,1,block) = rule_point_values(:,i,block);
-       psignifit_array(i,2,block) = sum(accuracy(i,:,block),'omitnan');
+if exist('preformatted_array','var')
+    if preformatted_array
+        neg_psignifit_array(:,:,1) = input_data(:,:,1);
+        neg_psignifit_array(:,:,2) = input_data(:,:,2);
+        neg_psignifit_array(1,:,3) = input_data(1,:,1);
+        neg_psignifit_array(:,:,3) = input_data(:,:,1)+input_data(:,:,2);
+        %neg_psignifit_array(1,:,1:3) = ones(1,length(neg_psignifit_array(1,:,3)),3);
+        psignifit_array = neg_psignifit_array;
     end
-    psignifit_array(:,3,block) = sum(~isnan(accuracy(:,:,block)),2);
+        % summary is six rows:
+    %   1) point condition
+    %   2) matching angle
+    %   3) percent correct (low coherence)
+    %   4) mean rt for correct trials (low coherence)
+    %   5) percent correct (high coherence)
+    %   6) mean rt for correct trials (high coherence)
+    summary(1,:) = 1:length(neg_psignifit_array(:,1));
+    summary(2,:) = neg_psignifit_array(:,1);
+    summary(3,:) = neg_psignifit_array(:,2)./neg_psignifit_array(:,3);
+    summary(4,:) = zeros(1,length(neg_psignifit_array(:,1)));
+    summary(5,:) = neg_psignifit_array(:,2)./neg_psignifit_array(:,3);
+    summary(6,:) = zeros(1,length(neg_psignifit_array(:,1)));
+else
+    num_trials_per_block = length(input_data.stim_array)/num_blocks;
     
-end
-
-% lets add a block to the psignifit array which combines them
-psignifit_array(:,1,3) = psignifit_array(:,1,1);
-psignifit_array(:,2,3) = psignifit_array(:,2,1)+psignifit_array(:,2,2);
-psignifit_array(:,3,3) = psignifit_array(:,3,1)+psignifit_array(:,3,2);
-data_array = psignifit_array(:,:,1); jsave([save_file,'_psignifit_array_Er_',num2str(subjectid),'.json'],'vars',{'data_array'}); clear data_array;
-data_array = psignifit_array(:,:,2); jsave([save_file,'_psignifit_array_Hr_',num2str(subjectid),'.json'],'vars',{'data_array'}); clear data_array;
-
-
-% Note: the psignifit tool only goes low to high, so if as in this case the
-%       values of your stimulus level goes high to low, then you can flip
-%       the intensity values (i.e. lie to matlab) or invert them to their
-%       negative.
-neg_psignifit_array(:,1,:) = -psignifit_array(:,1,:);
-neg_psignifit_array(:,2:3,:) = psignifit_array(:,2:3,:);
-
-
+    % makes a structure that looks like
+    % | match point | number correct | number of trials |
+    % and builds row-wise each iteration
+    all_accuracy = NaN(10,length(input_data.stim_array)); % make array as large as (num_points,num_trials)
+    all_rts = NaN(10,length(input_data.stim_array));
+    for i = 1:length(input_data.stim_array)
+        % rows are rule point, cols are accuracy
+        all_accuracy(input_data.stim_array{1,i}.rule_point_code,i) = input_data.correct(1,i);
+        all_rule_point_values(i) = input_data.stim_array{1,i}.rule_value; % pull these for later
+        if all_accuracy(input_data.stim_array{1,i}.rule_point_code,i) == 1
+            all_rts(input_data.stim_array{1,i}.rule_point_code,i) = input_data.rt(1,i);
+        end
+    end
+    
+    %input_data.coherence == block
+    
+    for block = 1:num_blocks
+        trials_start = num_trials_per_block*block-(num_trials_per_block-1);
+        trials_end = num_trials_per_block*block;
+        rule_point_values(1,:,block) = sort(unique(all_rule_point_values(input_data.coherence == block))); % cull to unique values only, and sort in order
+        correct_rts(:,:,block) = mean(all_rts(:,input_data.coherence == block),2,'omitnan');
+        accuracy(:,:,block) = all_accuracy(:,input_data.coherence == block);
+        for i = 1:length(accuracy(:,1,block))
+            psignifit_array(i,1,block) = rule_point_values(:,i,block);
+            psignifit_array(i,2,block) = sum(accuracy(i,:,block),'omitnan');
+        end
+        psignifit_array(:,3,block) = sum(~isnan(accuracy(:,:,block)),2);
+        
+    end
+    
+    % lets add a block to the psignifit array which combines them
+    psignifit_array(:,1,3) = psignifit_array(:,1,1);
+    psignifit_array(:,2,3) = psignifit_array(:,2,1)+psignifit_array(:,2,2);
+    psignifit_array(:,3,3) = psignifit_array(:,3,1)+psignifit_array(:,3,2);
+    data_array = psignifit_array(:,:,1); jsave([save_file,'_psignifit_array_Er_',num2str(subjectid),'.json'],'vars',{'data_array'}); clear data_array;
+    data_array = psignifit_array(:,:,2); jsave([save_file,'_psignifit_array_Hr_',num2str(subjectid),'.json'],'vars',{'data_array'}); clear data_array;
+    
+    
+    % Note: the psignifit tool only goes low to high, so if as in this case the
+    %       values of your stimulus level goes high to low, then you can flip
+    %       the intensity values (i.e. lie to matlab) or invert them to their
+    %       negative.
+    neg_psignifit_array(:,1,:) = -psignifit_array(:,1,:);
+    neg_psignifit_array(:,2:3,:) = psignifit_array(:,2:3,:);
+    
+    
     % summary is six rows:
-%   1) point condition
-%   2) matching angle
-%   3) percent correct (low coherence)
-%   4) mean rt for correct trials (low coherence)
-%   5) percent correct (high coherence)
-%   6) mean rt for correct trials (high coherence)
-summary(1,:) = 1:length(rule_point_values(:,:,1));
-summary(2,:) = rule_point_values(:,:,1)';
-summary(3,:) = psignifit_array(:,2,1)./psignifit_array(:,3,1);
-summary(4,:) = correct_rts(:,:,1);
-summary(5,:) = psignifit_array(:,2,2)./psignifit_array(:,3,2);
-summary(6,:) = correct_rts(:,:,2);
-summary(1,:) = -summary(1,:);
-summary(2,:) = -summary(2,:);
+    %   1) point condition
+    %   2) matching angle
+    %   3) percent correct (low coherence)
+    %   4) mean rt for correct trials (low coherence)
+    %   5) percent correct (high coherence)
+    %   6) mean rt for correct trials (high coherence)
+    summary(1,:) = 1:length(rule_point_values(:,:,1));
+    summary(2,:) = rule_point_values(:,:,1)';
+    summary(3,:) = psignifit_array(:,2,1)./psignifit_array(:,3,1);
+    summary(4,:) = correct_rts(:,:,1);
+    summary(5,:) = psignifit_array(:,2,2)./psignifit_array(:,3,2);
+    summary(6,:) = correct_rts(:,:,2);
+    summary(1,:) = -summary(1,:);
+    summary(2,:) = -summary(2,:);
+end
 
 % prep data for psignifit
 
@@ -122,8 +151,10 @@ plot([-90 -0], [high_threshold_pc high_threshold_pc], '-', 'Color',[0 1 0])
 % add plot lines at the threshold value on x:
 plot([low_threshold low_threshold], [0.3 1], '-', 'Color',[1 0 0])
 plot([high_threshold high_threshold], [0.3 1], '-', 'Color',[0 1 0])
+if save_this
 %savefig([save_file '_lowcohsigmoid']);
 export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_sigmoid_both.jpeg')),'-transparent')
+end
 hold off
 
 % make a sigmoid and put it on a figure
@@ -142,8 +173,10 @@ plot([-90 -0], [high_threshold_pc high_threshold_pc], '-', 'Color',[0 1 0])
 % add plot lines at the threshold value on x:
 plot([low_threshold low_threshold], [0.3 1], '-', 'Color',[1 0 0])
 plot([high_threshold high_threshold], [0.3 1], '-', 'Color',[0 1 0])
+if save_this
 %savefig([save_file '_lowcohsigmoid']);
 export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_easy_sigmoid.jpeg')),'-transparent')
+end
 hold off
 % diplay rts on a figure
 rts_low = figure('visible','off');
@@ -162,14 +195,18 @@ plot([-90 -0], [low_threshold_pc low_threshold_pc], '-', 'Color',[1 0 0])
 plot([-90 -0], [low_threshold_pc low_threshold_pc], '-', 'Color',[1 0 0])
 plot([low_threshold low_threshold], [0.3 1], '-', 'Color',[1 0 0])
 plot([high_threshold high_threshold], [0.3 1], '-', 'Color',[0 1 0])
+if save_this
 %savefig([save_file '_hicohsigmoid']);
 export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_hard_sigmoid.jpeg')),'-transparent')
+end
 hold off
 % diplay rts on a figure
 rts_hi = figure('visible','off');
 plot(summary(2,:),summary(6,:),'ro:');
 %savefig([save_file '_hi_coh_rts']);
+if save_this
 export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_hard_rts.jpeg')),'-transparent')
+end
 
 low_threshold = abs(low_threshold);
 high_threshold = abs(high_threshold);
@@ -196,7 +233,9 @@ t(1)=title(visualise(1),'percent correct low coh');
 t(2)=title(visualise(2),'reaction time low coh');
 t(3)=title(visualise(3),'percent correct hi coh');
 t(4)=title(visualise(4),'reaction time hi coh');
+if save_this
 export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_complete.jpeg')),'-transparent')
+end
 
 % make the output a little less confusing to understand
 easy_threshold = high_threshold;

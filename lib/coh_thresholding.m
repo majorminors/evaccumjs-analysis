@@ -1,11 +1,11 @@
-function [easy_threshold,hard_threshold,summary] = coh_thresholding(input_data,save_dir,save_file,subjectid)
+function [easy_threshold,hard_threshold,summary,psignifit_array] = coh_thresholding(input_data,save_dir,save_file,subjectid,save_this,preformatted_array)
 % function [easy_value,hard_value] = coh_thresholding(p,d)
 %
 % coherence threshold analysis
 %
 % finds coherence value to achieve a specified percent correct for a
 % participant
-% 
+%
 % requires:
 %    various test parameters (expects to find in structure 'p')
 %    various saved outputs of test (expects to find in structure 'd')
@@ -14,7 +14,7 @@ function [easy_threshold,hard_threshold,summary] = coh_thresholding(input_data,s
 %
 % specify in this function your desired percent correct for thresholding (low_threshold_pc,
 %   high_threshold_pc)
-% 
+%
 % produces:
 %
 % easy_threshold = value to achieve your higher percent correct
@@ -33,39 +33,59 @@ function [easy_threshold,hard_threshold,summary] = coh_thresholding(input_data,s
 low_threshold_pc = 0.7; % low coherence/lower percent correct = hard
 high_threshold_pc = 0.9; % high coherence/higher percent correct = easy
 
-% makes a structure that looks like
-% | coherence point | number correct | number of trials |
-% and builds row-wise each iteration
-accuracy = NaN(10,length(input_data.stim_array)); % make array as large as (num_points,num_trials)
-rts = NaN(10,length(input_data.stim_array));
-for i = 1:length(input_data.stim_array)
-    % rows are coh point, cols are accuracy
-    accuracy(input_data.stim_array{1,i}.coh_point_code,i) = input_data.correct(1,i);
-    coh_point_values(i) = input_data.stim_array{1,i}.coherence_value; % pull these for later
-    if accuracy(input_data.stim_array{1,i}.coh_point_code,i) == 1
-        rts(input_data.stim_array{1,i}.coh_point_code,i) = input_data.rt(1,i);
+if ~exist('save_this','var')
+    save_this = 0;
+end
+
+if exist('preformatted_array','var')
+    if preformatted_array
+        psignifit_array = input_data;
     end
+        % summary is four rows:
+    %   1) point condition
+    %   2) coherence value
+    %   3) percent correct
+    %   4) average rt for correct trials
+    
+    summary(1,:) = 1:length(psignifit_array(:,1));
+    summary(2,:) = psignifit_array(:,1);
+    summary(3,:) = psignifit_array(:,2)./psignifit_array(:,3);
+    summary(4,:) = zeros(1,length(psignifit_array(:,1)));
+else
+    
+    % makes a structure that looks like
+    % | coherence point | number correct | number of trials |
+    % and builds row-wise each iteration
+    accuracy = NaN(10,length(input_data.stim_array)); % make array as large as (num_points,num_trials)
+    rts = NaN(10,length(input_data.stim_array));
+    for i = 1:length(input_data.stim_array)
+        % rows are coh point, cols are accuracy
+        accuracy(input_data.stim_array{1,i}.coh_point_code,i) = input_data.correct(1,i);
+        coh_point_values(i) = input_data.stim_array{1,i}.coherence_value; % pull these for later
+        if accuracy(input_data.stim_array{1,i}.coh_point_code,i) == 1
+            rts(input_data.stim_array{1,i}.coh_point_code,i) = input_data.rt(1,i);
+        end
+    end
+    coh_point_values = sort(unique(coh_point_values)); % cull to unique values only, and sort in order
+    correct_rts = mean(rts,2,'omitnan');
+    for i = 1:length(accuracy(:,1))
+        psignifit_array(i,1) = coh_point_values(i);
+        psignifit_array(i,2) = sum(accuracy(i,:),'omitnan');
+    end
+    psignifit_array(:,3) = sum(~isnan(accuracy),2);
+    
+    data_array = psignifit_array; jsave([save_file,'_psignifit_array_coh_',num2str(subjectid),'.json'],'vars',{'data_array'}); clear data_array;
+    % summary is four rows:
+    %   1) point condition
+    %   2) coherence value
+    %   3) percent correct
+    %   4) average rt for correct trials
+    
+    summary(1,:) = psignifit_array(:,1);
+    summary(2,:) = coh_point_values';
+    summary(3,:) = psignifit_array(:,2)./psignifit_array(:,3);
+    summary(4,:) = correct_rts;
 end
-coh_point_values = sort(unique(coh_point_values)); % cull to unique values only, and sort in order
-correct_rts = mean(rts,2,'omitnan');
-for i = 1:length(accuracy(:,1))
-   psignifit_array(i,1) = coh_point_values(i);
-   psignifit_array(i,2) = sum(accuracy(i,:),'omitnan');
-end
-psignifit_array(:,3) = sum(~isnan(accuracy),2);
-
-data_array = psignifit_array; jsave([save_file,'_psignifit_array_coh_',num2str(subjectid),'.json'],'vars',{'data_array'}); clear data_array;
-
-% summary is four rows:
-%   1) point condition
-%   2) coherence value
-%   3) percent correct
-%   4) average rt for correct trials
-
-summary(1,:) = psignifit_array(:,1);
-summary(2,:) = coh_point_values';
-summary(3,:) = psignifit_array(:,2)./psignifit_array(:,3);
-summary(4,:) = correct_rts;
 
 % make the sigmoid and put it on a figure
 sigmoid = figure('visible','on');
@@ -82,14 +102,18 @@ plot([0 1], [high_threshold_pc high_threshold_pc], '-', 'Color',[0 1 0])
 % add plot lines at the threshold value on x:
 plot([low_threshold low_threshold], [0.3 1], '-', 'Color',[1 0 0])
 plot([high_threshold high_threshold], [0.3 1], '-', 'Color',[0 1 0])
-%savefig(sigmoid,[save_file '_sigmoid']);
-export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_coh_sigmoid.jpeg')),'-transparent')
+if save_this
+    %savefig(sigmoid,[save_file '_sigmoid']);
+    export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_coh_sigmoid.jpeg')),'-transparent')
+end
 hold off
 % diplay rts on a figure
 rts = figure('visible','off');
 plot(summary(2,:),summary(4,:),'ro:')
-%savefig(rts,[save_file '_rts']);
-export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_coh_rts.jpeg')),'-transparent')
+if save_this
+    %savefig(rts,[save_file '_rts']);
+    export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_coh_rts.jpeg')),'-transparent')
+end
 % load those figures into variables
 %sigmoid=hgload(fullfile(datadir, save_file, [data_file '_sigmoid.fig']));
 %rts=hgload(fullfile(datadir, data_file, [data_file '_rts.fig']));
@@ -104,7 +128,9 @@ copyobj(allchild(get(rts,'CurrentAxes')),visualise(2));
 % add a legend
 t(1)=title(visualise(1),'percent correct');
 t(2)=title(visualise(2),'reaction time');
-export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_coh_complete.jpeg')),'-transparent')
+if save_this
+    export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_coh_complete.jpeg')),'-transparent')
+end
 % make the output a little less confusing to understand
 easy_threshold = high_threshold;
 hard_threshold = low_threshold;

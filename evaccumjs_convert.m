@@ -14,21 +14,28 @@ p = struct(); % keep some of our parameters tidy
 d = struct(); % set up a structure for the data info
 t = struct(); % set up a structure for temp data
 
-p.one_participant = 1; % your script doesn't work for one participant, so switch this on to apply a fix
-p.plot_norms = 1;
+
+p.file_control = 1; % for each file, 1 = one participant, 0 = multiple, -1 = unknown, -2 = skip
+p.plot_norms = 0;
 p.skip_check_pp = 0;
 p.plot_coh = 1;
-p.plot_coh_ang = 1;
+p.check_coh = 0;
 p.plot_match = 1;
+p.check_match = 0;
+p.plot_coh_ang = 1;
+p.check_coh_ang = 0;
 p.skip_check_lba = 0;
 p.plot_rt_hist = 1;
 p.plot_rts = 1;
 p.plot_pc = 1;
 p.skip_check_lbacont = 0;
 
+
 % set up variables
 rootdir = pwd; %% root directory - used to inform directory mappings
+
 datadir = fullfile(rootdir,'data/behav_8'); % location of data
+
 p.savefilename = 'processed_data'; % savefile for all data
 figdir = fullfile(datadir,'figures'); % place to save figures
 if ~exist(figdir,'dir')
@@ -39,20 +46,41 @@ p.datafilepattern = 'jatos_results_*'; % file pattern of input data
 % directory mapping
 addpath(genpath(fullfile(rootdir, 'lib'))); % add libraries to path
 
+if p.check_coh == 1 && p.plot_coh == 0; error('you have to plot coherence to check coherence'); end
+if p.check_match == 1 && p.plot_match == 0; error('you have to plot matching to check matching'); end
+
 p.save_file = fullfile(datadir, p.savefilename);
 
 %% loop through subjects
 d.fileinfo = dir(fullfile(datadir, p.datafilepattern)); % find all the datafiles and get their info
 t.alldata = {};
-t.skip_this_dataset = 0;
+t.skip_count = 0;
 for file = 1:length(d.fileinfo) % loop through the files
-    t.path = fullfile(datadir, d.fileinfo(file).name); % get the full path to the file
-    fprintf(1, 'working with %s\n', t.path); % print that so you can check
+    fprintf(1, 'working with file %1.0f of %1.0f\n', file, length(d.fileinfo)); % print that so you can check
 
+    t.path = fullfile(datadir, d.fileinfo(file).name); % get the full path to the file
+    fprintf(1, 'file path: %s\n', t.path); % print that so you can check
+    
+    disp('loading file')
     t.load = loadjson(t.path); % load in the data
     %t.load = jsondecode(fileread(t.path));
     t.load = t.load';
-    if length(t.load) > 1 % if there's more than one participant in the file
+    disp('file loaded')
+    
+    if p.file_control(file) == -1
+        disp(t.load)
+        disp('specified unknown for file control')
+        t.prompt = 'check entries loaded (above): if one participant (1), if not (0), if skip (-2): enter a value and press enter to continue';
+        p.file_control(file) = input(t.prompt,'s');
+    end
+    
+    if p.file_control(file) == -2
+        disp('file skipped')
+        t.skip_count=t.skip_count+1;
+        continue % skip this file, moving on to the next iteration of the for loop
+    end
+    
+    if ~p.file_control
         dataset = [1,length(t.load(1,:))]; % variable to control the while loop - left side indicates what participant dataset in the file we're up to, right side indicates number of datasets
         while (dataset(1) <= dataset(2))
             if isempty(t.load{1,dataset(1)}) % if this dataset has nothing in it (i.e. a participant who started but didn't finish)
@@ -63,13 +91,15 @@ for file = 1:length(d.fileinfo) % loop through the files
         end
     end
     
-    if p.one_participant
-        t.alldata{1} = t.load; % load that subject into one cell
+    if p.file_control
+        t.alldata{file-t.skip_count} = t.load; % load that subject into one cell
     else
         t.alldata = [t.alldata,t.load]; % concat those into one var, so each subject is a cell
     end
     
 end
+disp('all files imported')
+
 d.alldata = t.alldata; % save all the data
 
 for subject = 1:length(t.alldata) % loop through each subject
@@ -77,10 +107,18 @@ for subject = 1:length(t.alldata) % loop through each subject
     
     t.this_subj_data = t.alldata{subject};
     warning('if you get an error on one of these next operations, you probably need to check whether you imported participants properly (e.g. turn on/off p.one_participant)')
-   
+    
     t.this_subj_trials = []; % init this so we can pull the trials out of each component
     % now we loop through the components
     for component = 1:numel(t.this_subj_data)
+        %         1) JATOS set up: has app id and condition
+        %         2) experiment set up with consent and demographics
+        %         3) instructions
+        %         4) coherence thresholdhing 1
+        %         5) decision thresholding
+        %         6) coherence thresholding 2
+        %         7) experiment
+        %         8) experiment finish (nothing really here)
         t.this_component = t.this_subj_data{component};
         
         % start off looking for prolific (or other) id
@@ -118,12 +156,12 @@ for subject = 1:length(t.alldata) % loop through each subject
         if isfield(t.this_component, 'rule_values')
             t.rule_values = t.this_component.rule_values;
         end
-%         if isfield(t.this_component, 'rule_easy_dots')
-%             t.easy_dots_rule_value = t.this_component.rule_easy_dots;
-%         end
-%         if isfield(t.this_component, 'rule_hard_dots')
-%             t.hard_dots_rule_value = t.this_component.rule_hard_dots;
-%         end
+        %         if isfield(t.this_component, 'rule_easy_dots')
+        %             t.easy_dots_rule_value = t.this_component.rule_easy_dots;
+        %         end
+        %         if isfield(t.this_component, 'rule_hard_dots')
+        %             t.hard_dots_rule_value = t.this_component.rule_hard_dots;
+        %         end
         if isfield(t.this_component, 'coherence_values')
             t.coherence_values = t.this_component.coherence_values;
         end
@@ -142,9 +180,10 @@ for subject = 1:length(t.alldata) % loop through each subject
             end
         end; clear thisField fn
     end
-
-
+    
+    
     % data is all in a row, so we go through each col and pull the values we want
+    
     t.coh_count = 0;
     t.rule_count = 0;
     t.coh_ang_count = 0;
@@ -193,13 +232,33 @@ for subject = 1:length(t.alldata) % loop through each subject
                 disp(t.match_distances_rounded)
                 for i = 1:length(t.exp.stim_array)
                     if round( t.exp.stim_array{1,i}.match_dist_cue_dir,1) == min(t.match_distances_rounded) || round( t.exp.stim_array{1,i}.match_dist_cue_dir,1) == max(t.match_distances_rounded)
-                    t.exp.stim_array{1,i}.match_difficulty = 1;
+                        t.exp.stim_array{1,i}.match_difficulty = 1;
                     else
                         t.exp.stim_array{1,i}.match_difficulty = 2;
                     end
                 end
             end
         end % end stimulus array sorter
+        
+        
+        
+        
+        if isfield(t.current_trial, 'rule_values')
+            t.rule_values = t.current_trial.rule_values;
+        end
+        %                 if isfield(t.current_trial, 'rule_easy_dots')
+        %                     t.easy_dots_rule_value = t.current_trial.rule_easy_dots;
+        %                 end
+        %                 if isfield(t.current_trial, 'rule_hard_dots')
+        %                     t.hard_dots_rule_value = t.current_trial.rule_hard_dots;
+        %                 end
+        if isfield(t.current_trial, 'coherence_values')
+            t.coherence_values = t.current_trial.coherence_values;
+        end
+        if isfield(t.current_trial, 'updated_coherence_values')
+            t.updated_coherence_values = t.current_trial.updated_coherence_values;
+        end
+        
         
         
         % only deal with trials that are labelled with experiment part
@@ -270,6 +329,7 @@ for subject = 1:length(t.alldata) % loop through each subject
         
     end % end trial loop
     
+    
     % collate results
     d.subjects(subject).id = t.id;
     d.subjects(subject).coh = t.coh;
@@ -277,11 +337,11 @@ for subject = 1:length(t.alldata) % loop through each subject
     d.subjects(subject).coh_ang = t.coh_ang;
     d.subjects(subject).exp = t.exp;
     d.subjects(subject).rule_values = t.rule_values;
-%     d.subjects(subject).hard_dots_rule_value = t.hard_dots_rule_value;
-%     d.subjects(subject).easy_dots_rule_value = t.easy_dots_rule_value;
+    %     d.subjects(subject).hard_dots_rule_value = t.hard_dots_rule_value;
+    %     d.subjects(subject).easy_dots_rule_value = t.easy_dots_rule_value;
     d.subjects(subject).coherence_values = t.coherence_values;
     d.subjects(subject).updated_coherence_values = t.updated_coherence_values;
-
+    
     disp('*coherence thresholding one*')
     disp('accuracy (low coh/hard threshold is .9, high coh/easy threshold is .7)')
     disp(accthis(d.subjects(subject).coh.correct))
@@ -306,7 +366,8 @@ for subject = 1:length(t.alldata) % loop through each subject
         title('match thresholding')
         export_fig(fullfile(figdir,strcat(num2str(subject),'_match_normplot.jpeg')),'-transparent')
     end
-        disp('*coherence thresholding two*')
+    
+    disp('*coherence second thresholding*')
     disp('accuracy (low coh/hard threshold is .9, high coh/easy threshold is .7)')
     disp(accthis(d.subjects(subject).coh_ang.correct))
     disp('num invalid')
@@ -315,7 +376,7 @@ for subject = 1:length(t.alldata) % loop through each subject
     disp(length(find(d.subjects(subject).coh_ang.rt >=0 & d.subjects(subject).coh_ang.rt < 400)))
     if p.plot_norms
         figure; normplot(d.subjects(subject).coh_ang.rt)
-        title('coherence thresholding')
+        title('coherence second thresholding')
         export_fig(fullfile(figdir,strcat(num2str(subject),'_coh_ang_normplot.jpeg')),'-transparent')
     end
     disp('*experiment*')
@@ -337,47 +398,127 @@ for subject = 1:length(t.alldata) % loop through each subject
         t.prompt = 'Continue to psychophys with this participant? y/n [y]: ';
         t.do_pp = input(t.prompt,'s');
         if isempty(t.do_pp); t.do_pp = 'y'; end
+        close all
     end
     
     if t.do_pp == 'y'
         % check thresholds
-        
-        if p.plot_coh; [t.coh_easy,t.coh_hard] = coh_thresholding(d.subjects(subject).coh,figdir,p.save_file,subject); end
-        if p.plot_match; [t.match_easy,t.match_hard,t.match_summary] = match_thresholding(d.subjects(subject).rule,figdir,p.save_file,subject); end
-        if p.plot_coh_ang; [t.coh_ang_easy,t.coh_ang_hard] = coh_thresholding(d.subjects(subject).coh_ang,figdir,p.save_file,subject); end
-
         if p.plot_coh
-            disp('*coherence thresholds (first)*')
-            disp('easy:')
-            disp(t.coh_easy)
-            disp('hard:')
-            disp(t.coh_hard)
+            [t.coh_easy,t.coh_hard,~,t.psignifit_array] = coh_thresholding(d.subjects(subject).coh,figdir,p.save_file,subject,1);
+            if p.check_coh
+                [t.jscoh_easy,t.jscoh_hard,~,t.jscoh_psignifit_array] = coh_thresholding(t.coh_psignifit_array,figdir,p.save_file,subject,0,1);
+                disp('**checking js vs matlab psignifit for coherence**')
+                disp('*easy:*')
+                disp('matlab:')
+                disp(t.coh_easy)
+                disp('js:')
+                disp(t.jscoh_easy)
+                t.prompt = 'Press enter to continue';
+                input(t.prompt,'s');
+                disp('*hard:*')
+                disp('matlab:')
+                disp(t.coh_hard)
+                disp('js:')
+                disp(t.jscoh_hard)
+                t.prompt = 'press enter to continue';
+                input(t.prompt,'s');
+                disp('*arrays:*')
+                disp('matlab:')
+                disp(t.psignifit_array)
+                disp('js:')
+                disp(t.jscoh_psignifit_array)
+                t.prompt = 'press enter to continue';
+                input(t.prompt,'s');
+            else
+                disp('*coherence thresholds one*')
+                disp('easy:')
+                disp(t.coh_easy)
+                disp('hard:')
+                disp(t.coh_hard)
+            end
         end
         if p.plot_match
-            disp('*matching thresholds*')
-            disp('easy:')
-            disp(t.match_easy)
-            disp('mean rt, correct trials, easy condition:')
-            disp(mean(t.match_summary(4,:)))
-            disp('hard:')
-            disp(t.match_hard)
-            disp('mean rt, correct trials, hard condition:')
-            disp(mean(t.match_summary(6,:)))
+            [t.match_easy,t.match_hard,t.match_summary,t.psignifit_array] = match_thresholding(d.subjects(subject).rule,figdir,p.save_file,subject,1);
+            if p.check_match
+                tmp(:,:,1) = t.rule_ecoh_psignifit_array;
+                tmp(:,:,2) = t.rule_hcoh_psignifit_array;
+                [t.jsmatch_easy,t.jsmatch_hard,t.jsmatch_summary,t.jsmatch_psignifit_array] = match_thresholding(tmp,figdir,p.save_file,subject,0,1); clear tmp;
+                disp('**checking js vs matlab psignifit for matching**')
+                disp('*easy (easy rule, hard rule):*')
+                disp('matlab:')
+                disp(t.match_easy)
+                disp('js:')
+                disp(t.jsmatch_easy)
+                t.prompt = 'press enter to continue';
+                input(t.prompt,'s');
+                disp('*hard:*')
+                disp('matlab:')
+                disp(t.match_hard)
+                disp('js:')
+                disp(t.jsmatch_hard)
+                t.prompt = 'press enter to continue';
+                input(t.prompt,'s');
+                disp('*arrays:*')
+                disp('matlab:')
+                disp(t.psignifit_array)
+                disp('js:')
+                disp(t.jsmatch_psignifit_array)
+                t.prompt = 'press enter to continue';
+                input(t.prompt,'s');
+            else
+                disp('*matching thresholds*')
+                disp('easy:')
+                disp(t.match_easy)
+                disp('mean rt, correct trials, easy condition:')
+                disp(mean(t.match_summary(4,:)))
+                disp('hard:')
+                disp(t.match_hard)
+                disp('mean rt, correct trials, hard condition:')
+                disp(mean(t.match_summary(6,:)))
+            end
         end
         if p.plot_coh_ang
-            disp('*coherence thresholds (second)*')
-            disp('easy:')
-            disp(t.coh_ang_easy)
-            disp('hard:')
-            disp(t.coh_ang_hard)
+            [t.coh_easy,t.coh_hard,~,t.psignifit_array] = coh_thresholding(d.subjects(subject).coh_ang,figdir,p.save_file,subject,1);
+            if p.check_coh_ang
+                [t.jscoh_easy,t.jscoh_hard,~,t.jscoh_psignifit_array] = coh_thresholding(t.coh_psignifit_array_updated,figdir,p.save_file,subject,0,1);
+                disp('**checking js vs matlab psignifit for coherence two**')
+                disp('*easy:*')
+                disp('matlab:')
+                disp(t.coh_easy)
+                disp('js:')
+                disp(t.jscoh_easy)
+                t.prompt = 'press enter to continue';
+                input(t.prompt,'s');
+                disp('*hard:*')
+                disp('matlab:')
+                disp(t.coh_hard)
+                disp('js:')
+                disp(t.jscoh_hard)
+                t.prompt = 'press enter to continue';
+                input(t.prompt,'s');
+                disp('*arrays:*')
+                disp('matlab:')
+                disp(t.psignifit_array)
+                disp('js:')
+                disp(t.jscoh_psignifit_array)
+                t.prompt = 'press enter to continue';
+                input(t.prompt,'s');
+            else
+                disp('*coherence thresholds two*')
+                disp('easy:')
+                disp(t.coh_easy)
+                disp('hard:')
+                disp(t.coh_hard)
+            end
         end
-
+        
         if p.skip_check_lba
             t.do_lba = 'y';
         else
             t.prompt = 'Continue to process for LBA fit with this participant? y/n [y]: ';
             t.do_lba = input(t.prompt,'s');
             if isempty(t.do_lba); t.do_lba = 'y'; end
+            close all
         end
     else
         t.do_lba = 'n';
@@ -430,7 +571,7 @@ for subject = 1:length(d.subjects) % loop through subjects
         t.consolidata(:,4) = num2cell(d.subjects(subject).exp.rt');
         t.consolidata(:,5) = num2cell(d.subjects(subject).exp.correct');
         t.consolidata(:,6) = num2cell(t.trialtype);
-
+        
         if p.plot_rt_hist
             % get some rt histograms
             disp('1 = EcEr, 2 = EcHr, 3 = HcEr, 4 = HcHr')
@@ -451,7 +592,7 @@ for subject = 1:length(d.subjects) % loop through subjects
             end; clear condition all_conditions all_accuracies all_rts condition_idx the_rts
             export_fig(fullfile(figdir,strcat('LBA_',num2str(subject),'_rt_hist.jpeg')),'-transparent')
         end
-
+        
         if p.plot_rts
             % get some rt bars
             disp('1 = EcEr, 2 = EcHr, 3 = HcEr, 4 = HcHr')
@@ -502,12 +643,13 @@ for subject = 1:length(d.subjects) % loop through subjects
             t.prompt = 'Continue with this participant? y/n [y]: ';
             t.cont_lba = input(t.prompt,'s');
             if isempty(t.cont_lba); t.cont_lba = 'y'; end
+            close all
         end
         
         if t.cont_lba
-        % stack it up
-        d.subjects(subject).lba = t.consolidata;
-        d.lbadata{ilba} = t.consolidata;
+            % stack it up
+            d.subjects(subject).lba = t.consolidata;
+            d.lbadata{ilba} = t.consolidata;
         else
             d.subjects(subject).lba = 'n';
         end
@@ -518,7 +660,7 @@ end; clear subject ilba; % end subject loop for lba
 
 fprintf('saving lba adjusted output from %s\n', mfilename);
 save(p.save_file,'d'); % save all data to a .mat file
- 
+
 
 function accuracy = accthis(data)
 accuracy = sum(data)/length(data);
