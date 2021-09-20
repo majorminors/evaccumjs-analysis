@@ -105,8 +105,10 @@ else
     psignifit_array(:,1,3) = psignifit_array(:,1,1);
     psignifit_array(:,2,3) = psignifit_array(:,2,1)+psignifit_array(:,2,2);
     psignifit_array(:,3,3) = psignifit_array(:,3,1)+psignifit_array(:,3,2);
-    data_array = psignifit_array(:,:,1); jsave([save_file,'_psignifit_array_Er_',num2str(subjectid),'.json'],'vars',{'data_array'}); clear data_array;
-    data_array = psignifit_array(:,:,2); jsave([save_file,'_psignifit_array_Hr_',num2str(subjectid),'.json'],'vars',{'data_array'}); clear data_array;
+
+    % can save in json format
+%    data_array = psignifit_array(:,:,1); jsave([save_file,'_psignifit_array_Er_',num2str(subjectid),'.json'],'vars',{'data_array'}); clear data_array;
+%    data_array = psignifit_array(:,:,2); jsave([save_file,'_psignifit_array_Hr_',num2str(subjectid),'.json'],'vars',{'data_array'}); clear data_array;
     
     
     % Note: the psignifit tool only goes low to high, so if as in this case the
@@ -144,16 +146,16 @@ hold on
 low_threshold = plotline.XData(low_threshold_idx); % then find the value using the index
 high_threshold = -90-low_threshold; % this is the inverse of the low_threshold value - currently I've flipped everything into negative so it is oriented correctly in the psignifit tools
 % add plot lines at the threshold value on y:
-plot([-90 -0], [low_threshold_pc low_threshold_pc], '-', 'Color',[1 0 0])
+plot([-90 -0], [low_threshold_pc low_threshold_pc], '-', 'Color',[1 0 0]);
 [~, high_pc_idx] = min(abs(plotline.XData-high_threshold(1))); % then find the index of the value closest to the high_threshold
 high_threshold_pc = plotline.YData(high_pc_idx); % then find the value using the index and print that in the command window
-plot([-90 -0], [high_threshold_pc high_threshold_pc], '-', 'Color',[0 1 0])
+plot([-90 -0], [high_threshold_pc high_threshold_pc], '-', 'Color',[0 1 0]);
 % add plot lines at the threshold value on x:
-plot([low_threshold low_threshold], [0.3 1], '-', 'Color',[1 0 0])
-plot([high_threshold high_threshold], [0.3 1], '-', 'Color',[0 1 0])
+plot([low_threshold low_threshold], [0.3 1], '-', 'Color',[1 0 0]);
+plot([high_threshold high_threshold], [0.3 1], '-', 'Color',[0 1 0]);
 if save_this
 %savefig([save_file '_lowcohsigmoid']);
-export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_sigmoid_both.jpeg')),'-transparent')
+export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_sigmoid_both.jpeg')),'-transparent');
 end
 hold off
 
@@ -166,23 +168,23 @@ hold on
 low_threshold = plotline.XData(low_threshold_idx); % then find the value using the index
 high_threshold = -90-low_threshold; % this is the inverse of the low_threshold value - currently I've flipped everything into negative so it is oriented correctly in the psignifit tools
 % add plot lines at the threshold value on y:
-plot([-90 -0], [low_threshold_pc low_threshold_pc], '-', 'Color',[1 0 0])
+plot([-90 -0], [low_threshold_pc low_threshold_pc], '-', 'Color',[1 0 0]);
 [~, high_pc_idx] = min(abs(plotline.XData-high_threshold(1))); % then find the index of the value closest to the high_threshold
 high_threshold_pc = plotline.YData(high_pc_idx); % then find the value using the index and print that in the command window
-plot([-90 -0], [high_threshold_pc high_threshold_pc], '-', 'Color',[0 1 0])
+plot([-90 -0], [high_threshold_pc high_threshold_pc], '-', 'Color',[0 1 0]);
 % add plot lines at the threshold value on x:
-plot([low_threshold low_threshold], [0.3 1], '-', 'Color',[1 0 0])
-plot([high_threshold high_threshold], [0.3 1], '-', 'Color',[0 1 0])
+plot([low_threshold low_threshold], [0.3 1], '-', 'Color',[1 0 0]);
+plot([high_threshold high_threshold], [0.3 1], '-', 'Color',[0 1 0]);
 if save_this
 %savefig([save_file '_lowcohsigmoid']);
-export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_easy_sigmoid.jpeg')),'-transparent')
+export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_easy_sigmoid.jpeg')),'-transparent');
 end
 hold off
 % diplay rts on a figure
 rts_low = figure('visible','off');
 plot(summary(2,:),summary(4,:),'ro:');
 %savefig([save_file '_low_coh_rts']);
-export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_easy_rts.jpeg')),'-transparent')
+export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_easy_rts.jpeg')),'-transparent');
 % make a sigmoid and put it on a figure
 sigmoid_hi = figure('visible','off');
 [plotresult, plotline, plotdata] = psychcurve(neg_psignifit_array(:,:,1));
@@ -191,13 +193,13 @@ hold on
 low_threshold_pc = plotline.YData(low_pc_idx); % then find the value using the index and print that in the command window
 [~, high_pc_idx] = min(abs(plotline.XData-high_threshold(1))); % then find the index of the value closest to the high_threshold
 high_threshold_pc = plotline.YData(high_pc_idx); % then find the value using the index and print that in the command window
-plot([-90 -0], [low_threshold_pc low_threshold_pc], '-', 'Color',[1 0 0])
-plot([-90 -0], [low_threshold_pc low_threshold_pc], '-', 'Color',[1 0 0])
-plot([low_threshold low_threshold], [0.3 1], '-', 'Color',[1 0 0])
-plot([high_threshold high_threshold], [0.3 1], '-', 'Color',[0 1 0])
+plot([-90 -0], [low_threshold_pc low_threshold_pc], '-', 'Color',[1 0 0]);
+plot([-90 -0], [low_threshold_pc low_threshold_pc], '-', 'Color',[1 0 0]);
+plot([low_threshold low_threshold], [0.3 1], '-', 'Color',[1 0 0]);
+plot([high_threshold high_threshold], [0.3 1], '-', 'Color',[0 1 0]);
 if save_this
 %savefig([save_file '_hicohsigmoid']);
-export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_hard_sigmoid.jpeg')),'-transparent')
+export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_hard_sigmoid.jpeg')),'-transparent');
 end
 hold off
 % diplay rts on a figure
@@ -205,7 +207,7 @@ rts_hi = figure('visible','off');
 plot(summary(2,:),summary(6,:),'ro:');
 %savefig([save_file '_hi_coh_rts']);
 if save_this
-export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_hard_rts.jpeg')),'-transparent')
+export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_hard_rts.jpeg')),'-transparent');
 end
 
 low_threshold = abs(low_threshold);
@@ -234,7 +236,7 @@ t(2)=title(visualise(2),'reaction time low coh');
 t(3)=title(visualise(3),'percent correct hi coh');
 t(4)=title(visualise(4),'reaction time hi coh');
 if save_this
-export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_complete.jpeg')),'-transparent')
+export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_complete.jpeg')),'-transparent');
 end
 
 % make the output a little less confusing to understand
