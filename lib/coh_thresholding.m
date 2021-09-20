@@ -74,7 +74,8 @@ else
     end
     psignifit_array(:,3) = sum(~isnan(accuracy),2);
     
-    data_array = psignifit_array; jsave([save_file,'_psignifit_array_coh_',num2str(subjectid),'.json'],'vars',{'data_array'}); clear data_array;
+    %    can save this array in json format
+%    data_array = psignifit_array; jsave([save_file,'_psignifit_array_coh_',num2str(subjectid),'.json'],'vars',{'data_array'}); clear data_array;
     % summary is four rows:
     %   1) point condition
     %   2) coherence value
@@ -97,14 +98,14 @@ hold on
 low_threshold = plotline.XData(low_threshold_idx); % then find the values using the index
 high_threshold = plotline.XData(high_threshold_idx);
 % add plot lines at the threshold value on y:
-plot([0 1], [low_threshold_pc low_threshold_pc], '-', 'Color',[1 0 0])
-plot([0 1], [high_threshold_pc high_threshold_pc], '-', 'Color',[0 1 0])
+plot([0 1], [low_threshold_pc low_threshold_pc], '-', 'Color',[1 0 0]);
+plot([0 1], [high_threshold_pc high_threshold_pc], '-', 'Color',[0 1 0]);
 % add plot lines at the threshold value on x:
-plot([low_threshold low_threshold], [0.3 1], '-', 'Color',[1 0 0])
-plot([high_threshold high_threshold], [0.3 1], '-', 'Color',[0 1 0])
+plot([low_threshold low_threshold], [0.3 1], '-', 'Color',[1 0 0]);
+plot([high_threshold high_threshold], [0.3 1], '-', 'Color',[0 1 0]);
 if save_this
     %savefig(sigmoid,[save_file '_sigmoid']);
-    export_fig(fullfile(save_dir,strcat(num2str(subjectid),save_file,'_coh_sigmoid.jpeg')),'-transparent')
+    export_fig(fullfile(save_dir,strcat(num2str(subjectid),save_file,'_coh_sigmoid.jpeg')),'-transparent');
 end
 hold off
 % diplay rts on a figure
@@ -112,7 +113,7 @@ rts = figure('visible','off');
 plot(summary(2,:),summary(4,:),'ro:')
 if save_this
     %savefig(rts,[save_file '_rts']);
-    export_fig(fullfile(save_dir,strcat(num2str(subjectid),save_file,'_coh_rts.jpeg')),'-transparent')
+    export_fig(fullfile(save_dir,strcat(num2str(subjectid),save_file,'_coh_rts.jpeg')),'-transparent');
 end
 % load those figures into variables
 %sigmoid=hgload(fullfile(datadir, save_file, [data_file '_sigmoid.fig']));
@@ -129,7 +130,7 @@ copyobj(allchild(get(rts,'CurrentAxes')),visualise(2));
 t(1)=title(visualise(1),'percent correct');
 t(2)=title(visualise(2),'reaction time');
 if save_this
-    export_fig(fullfile(save_dir,strcat(num2str(subjectid),save_file'_coh_complete.jpeg')),'-transparent')
+    export_fig(fullfile(save_dir,strcat(num2str(subjectid),save_file,'_coh_complete.jpeg')),'-transparent');
 end
 % make the output a little less confusing to understand
 easy_threshold = high_threshold;
