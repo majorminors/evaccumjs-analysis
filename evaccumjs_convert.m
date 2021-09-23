@@ -14,27 +14,26 @@ p = struct(); % keep some of our parameters tidy
 d = struct(); % set up a structure for the data info
 t = struct(); % set up a structure for temp data
 
-
-p.file_control = 1; % for each file, 1 = one participant, 0 = multiple, -1 = unknown, -2 = skip
-p.plot_norms = 0;
-p.skip_check_pp = 0;
+p.file_control = ones(1,20); % for each file, 1 = one participant, 0 = multiple, -1 = unknown, -2 = skip
+p.plot_norms = 1;
+p.skip_check_pp = 1;
 p.plot_coh = 1;
 p.check_coh = 0;
 p.plot_match = 1;
 p.check_match = 0;
 p.plot_coh_ang = 1;
 p.check_coh_ang = 0;
-p.skip_check_lba = 0;
+p.skip_check_lba = 1;
 p.plot_rt_hist = 1;
 p.plot_rts = 1;
 p.plot_pc = 1;
-p.skip_check_lbacont = 0;
+p.skip_check_lbacont = 1;
 
 
 % set up variables
 rootdir = pwd; %% root directory - used to inform directory mappings
 
-datadir = fullfile(rootdir,'data/behav_8'); % location of data
+datadir = fullfile(rootdir,'data','behav_9'); % location of data
 
 p.savefilename = 'processed_data'; % savefile for all data
 figdir = fullfile(datadir,'figures'); % place to save figures
@@ -106,8 +105,7 @@ for subject = 1:length(t.alldata) % loop through each subject
     fprintf(1, 'working with subject %1.0f of %1.0f\n', subject, length(t.alldata)); % print that so you can check
     
     t.this_subj_data = t.alldata{subject};
-    warning('if you get an error on one of these next operations, you probably need to check whether you imported participants properly (e.g. turn on/off p.one_participant)')
-    
+
     t.this_subj_trials = []; % init this so we can pull the trials out of each component
     % now we loop through the components
     for component = 1:numel(t.this_subj_data)
@@ -123,22 +121,19 @@ for subject = 1:length(t.alldata) % loop through each subject
         
         % start off looking for prolific (or other) id
         if isfield(t.this_component,'app_identifier_string')
+            if component == 1 % use the first component to make an id
+                t.id = t.this_component.app_identifier_string;
+            end
             if isfield(t,'id')
                 if ~strcmp(t.id,t.this_component.app_identifier_string) % error if the ids aren't the same in every component
-                    error('you seem to have multiple app id strings (i.e. multiple participant results) confused')
+                    sprintf('t.id is %s and t.this_component.app_identifier_string is %s',t.id,t.this_component.app_identifier_string)
+                    %error('you seem to have multiple app id strings (i.e. multiple participant results) confused')
                 end
-            else % otherwise create a field to hold the id!
-                t.id = t.this_component.app_identifier_string;
             end
         end
         
         % lets get a code for button press
         if isfield(t.this_component,'condition')
-            if isfield(t,'button_condition')
-                if t.button_condition{2} ~= t.this_component.condition{2} % check that the condition code numbers match for each component
-                    error('you seem to have multiple button conditions (i.e. multiple participant results) confused') % else error
-                end
-            else % create a field to hold the button condition information
                 t.button_condition = t.this_component.condition;
                 % then we need to get a keycode so make that too
                 % condition 1 : respkeys o,p
@@ -149,7 +144,13 @@ for subject = 1:length(t.alldata) % loop through each subject
                 elseif t.button_condition{2} == 2
                     t.keycode = [80,79];
                 end
-            end
+                % see if we can fix this?
+%             if isfield(t,'button_condition')
+%                 if t.button_condition{2} ~= t.this_component.condition{2} % check that the condition code numbers match for each component
+%                     sprintf('t.button_condition is %s and t.this_component.condition is %s',t.button_condition{2},t.this_component.condition{2})
+%                     error('you seem to have multiple button conditions (i.e. multiple participant results) confused') % else error
+%                 end
+%             end
         end
         
         % get values of stuff
@@ -179,7 +180,7 @@ for subject = 1:length(t.alldata) % loop through each subject
                 t.this_subj_trials = [t.this_subj_trials,{t.this_component.(fn{thisField})}];
             end
         end; clear thisField fn
-    end
+    end;
     
     
     % data is all in a row, so we go through each col and pull the values we want
@@ -341,6 +342,9 @@ for subject = 1:length(t.alldata) % loop through each subject
     %     d.subjects(subject).easy_dots_rule_value = t.easy_dots_rule_value;
     d.subjects(subject).coherence_values = t.coherence_values;
     d.subjects(subject).updated_coherence_values = t.updated_coherence_values;
+    
+    disp('id:')
+    disp(t.id)
     
     disp('*coherence thresholding one*')
     disp('accuracy (low coh/hard threshold is .9, high coh/easy threshold is .7)')
@@ -515,6 +519,8 @@ for subject = 1:length(t.alldata) % loop through each subject
         if p.skip_check_lba
             t.do_lba = 'y';
         else
+            disp('id:')
+            disp(t.id)
             t.prompt = 'Continue to process for LBA fit with this participant? y/n [y]: ';
             t.do_lba = input(t.prompt,'s');
             if isempty(t.do_lba); t.do_lba = 'y'; end
@@ -640,6 +646,8 @@ for subject = 1:length(d.subjects) % loop through subjects
         if p.skip_check_lbacont
             t.cont_lba = 'y';
         else
+            disp('id:')
+            disp(t.id)
             t.prompt = 'Continue with this participant? y/n [y]: ';
             t.cont_lba = input(t.prompt,'s');
             if isempty(t.cont_lba); t.cont_lba = 'y'; end
@@ -662,6 +670,4 @@ fprintf('saving lba adjusted output from %s\n', mfilename);
 save(p.save_file,'d'); % save all data to a .mat file
 
 
-function accuracy = accthis(data)
-accuracy = sum(data)/length(data);
-end
+
