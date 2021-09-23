@@ -21,14 +21,14 @@ clc;
 fprintf('setting up %s\n', mfilename);
 p = struct(); % for parameters
 t = struct(); % for temp vars
-
+s
 %% set up variables
 
 % required
 rootdir = '/group/woolgar-lab/projects/Dorian/evaccum/evaccumjs-analysis'; %'C:\Users\doria\Nextcloud\desiderata\desiderata\04 Research\05 Evidence Accumulation\01 EvAccum Code';%'\\cbsu\data\Group\Woolgar-Lab\projects\Dorian\EvAccum'; % root directory - used to inform directory mappings
 
 % only required if not testing
-datadir = fullfile(rootdir,'data','behav_1');
+datadir = fullfile(rootdir,'data','behav_9_001optim_splitConds');
 lbadatadir = datadir; % expects to find your data here and will save results in a sub-folder here
 p.data_name = 'processed_data.mat'; % data file name
 jobdir = fullfile(lbadatadir,'scheduled_jobs'); % where you'll save any scheduled jobs (i.e. running on the scheduler)

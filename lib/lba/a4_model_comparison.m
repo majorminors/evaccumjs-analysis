@@ -12,11 +12,18 @@ t = struct(); % set up a structure for temp data
 % set up variables
 rootdir = '/group/woolgar-lab/projects/Dorian/evaccum/evaccumjs-analysis'; %'C:\Users\doria\Nextcloud\desiderata\desiderata\04 Research\05 Evidence Accumulation\01 EvAccum Code'; %
 
-datadir = fullfile(rootdir,'data','behav_1');
-num_subjects = 2;
+datadir = fullfile(rootdir,'data','behav_9_001optim_splitConds');
+modelIdentifier = 'easyCoh';
+modelNamePattern = ['Model_%s' '_' modelIdentifier '.mat'];
+num_subjects = 17;
 
 modeldir = fullfile(datadir,'lba_results'); % expects to find your modelling results here
+figDir = fullfile(modeldir,['figures' '_' modelIdentifier]); % will output figures here
 toolsdir = fullfile(rootdir, 'lib'); % where are all your scripts/tools?
+
+if ~exist(figDir,'dir')
+    mkdir(figDir);
+end
 
 % directory mapping
 addpath(genpath(toolsdir)); % add tools folder to path
@@ -31,16 +38,14 @@ design_space={[1,3],[1,4],[1,3,4],[1,3,4,5],[1,2],[1,2,3],[1,2,4],[1,2,3,4],[1,2
 mod_num = 2;
 Model_Feature = design_space{mod_num};
 
-[dname,IDnum] = getnames(modeldir,11);
-
-flabs = fullfile(rootdir,'Model_%s.mat');
+% dont use this flabs = fullfile(rootdir,'Model_%s.mat');
 %%
 BIC_all =[];
 for m = 1:length(design_space)%
     try
-    flabs =  sprintf('Model_%s.mat',num2str(m)); 
-    flabs = fullfile(modeldir,flabs);    
-    load(flabs);
+    thisModel =  sprintf(modelNamePattern,num2str(m)); 
+    thisModel = fullfile(modeldir,thisModel);    
+    load(thisModel);
     catch
         continue
     end
@@ -85,12 +90,12 @@ b(2).FaceColor = [.25 0 .25];
 % b(5).FaceColor = [.9 0 .9];
 b(9).FaceColor = [.5 0 .5];
 % b(10).FaceColor = [.5 0 .5];
-export_fig(fullfile(modeldir,'subjectBICs.jpeg'),'-transparent');
+export_fig(fullfile(figDir,'subjectBICs.jpeg'),'-transparent');
 
 % plot BICs by model
 figure; b = bar(BIC_all*-0.5,'FaceColor',[0 0.4470 0.7410]);
 ylim([20400 20900]);
-export_fig(fullfile(modeldir,'modelBICs.jpeg'),'-transparent');
+export_fig(fullfile(figDir,'modelBICs.jpeg'),'-transparent');
 
 %plot BIC (mean)
 for i = 1:K
@@ -98,7 +103,22 @@ for i = 1:K
     semBIC(i,1) = nansem(BIC_all(i,:));
     meanBIC(i,1) = meanBIC(i,1)*-0.5;
 end
+% mean bics ylimed around sem
+figure; b = bar(meanBIC);
+ylim([min(meanBIC-semBIC)-10 max(meanBIC+semBIC)+10]);
+b.FaceColor = 'flat'; % change face colour to highlight winner
+b.CData(1,:) = [.5 0 .5];
+b.CData(2,:) = [.25 0 .25];
+% b.CData(5,:) = [.9 0 .9];
+b.CData(9,:) = [.5 0 .5];
+% b.CData(10,:) = [.5 0 .5];
+hold on
+er = errorbar(1:K,meanBIC,semBIC,semBIC);
+er.Color = [0 0 0];                            
+er.LineStyle = 'none';
 
+% same but ylimed around mean bics alone in case sem is huge
+export_fig(fullfile(figDir,'meanBICs.jpeg'),'-transparent');
 figure; b = bar(meanBIC);
 ylim([min(meanBIC)-10 max(meanBIC)+10]);
 b.FaceColor = 'flat';
@@ -111,7 +131,7 @@ hold on
 er = errorbar(1:K,meanBIC,semBIC,semBIC);
 er.Color = [0 0 0];                            
 er.LineStyle = 'none';
-export_fig(fullfile(modeldir,'meanBICs.jpeg'),'-transparent');
+export_fig(fullfile(figDir,'meanBICs-sem.jpeg'),'-transparent');
 
 fig75 = figure(75);
 pos2 = [205   429   912   377];
@@ -138,7 +158,7 @@ pos2 = [205   429   912   377];
      set(gcf,'Color','white')
 %     
 %     %export_fig(['ProbModComp','.png'],'-png','-transparent','-painters')
-export_fig(fullfile(modeldir,'model_comparison.jpeg'),'-transparent');
+export_fig(fullfile(figDir,'model_comparison.jpeg'),'-transparent');
 % 
 % plot frequencies
 fig75 = figure(75);

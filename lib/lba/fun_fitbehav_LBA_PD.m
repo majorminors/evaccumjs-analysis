@@ -54,6 +54,13 @@ for idxsubj = 1:num_subjs
     % converting again to readable variables
     conds = dataValid(:,1);
     % if you want to split
+    %     conditions are:
+    %         EcEr = 1 = easy coherence, easy matching
+    %         EcHr = 2 = easy coherence, hard matching
+    %         HcEr = 3 = hard coherence, easy matching
+    %         HcHr = 4 = hard coherence, hard matching
+    % I don't know exactly what I was doing here, but I don't think it was
+    % working.
 %     easyOrHard = [];
 %     for i = 1:length(conds)
 %         if conds(i) == 2
@@ -90,8 +97,21 @@ for idxsubj = 1:num_subjs
         data2fit{idxsubj,level}.minRT = round(minRT(idxsubj),2);
         %parange(end,1) = round(minRT(idxsubj),2);%constrain the lower bound of T0 to the shortest RT
     end
-    %% fit the model
-    [bestpar{idxsubj,1},bestval{idxsubj,1},BIC{idxsubj,1}]=fitparams_refine_template_RDK('fiterror_cell_RDK',Model_Feature,{data2fit{idxsubj,1:4}},randiter,nosession,[],parange,bayesian);%#ok
+    %% fit the model    %     conditions are:
+    %         EcEr = 1 = easy coherence, easy matching
+    %         EcHr = 2 = easy coherence, hard matching
+    %         HcEr = 3 = hard coherence, easy matching
+    %         HcHr = 4 = hard coherence, hard matching
+    fitVariations = {'fiterror_cell_RDK',[1:4],'allConds';...
+        'fiterror_cell_EASYCOH',[1,2],'easyCoh';...
+        'fiterror_cell_HARDCOH',[3,4],'hardCoh';...
+        'fiterror_cell_EASYRULE',[1,3],'easyRule';...
+        'fiterror_cell_HARDRULE',[2,4],'hardRule';};
+    for idxVariations = 1:size(fitVariations,1)
+        [bestpar{idxsubj,1,idxVariations},bestval{idxsubj,1,idxVariations},BIC{idxsubj,1,idxVariations}]=fitparams_refine_template_RDK(fitVariations{idxVariations,1},Model_Feature,{data2fit{idxsubj,fitVariations{idxVariations,2}}},randiter,nosession,[],parange,bayesian);%#ok
+    end
+    % related to above, no idea what I was doing with this easy hard
+    % business
     % if you want to split
 %     if easyOrHard == 2
 %         [bestpar{idxsubj,1},bestval{idxsubj,1},BIC{idxsubj,1}]=fitparams_refine_template_RDK('fiterror_cell_HARDCOH',Model_Feature,{data2fit{idxsubj,1:2}},randiter,nosession,[],parange,bayesian);%#ok
@@ -100,6 +120,14 @@ for idxsubj = 1:num_subjs
 %     end
 end
 
-save(savename,'bestpar','bestval','BIC','rseed','settings');%,'bestpar_PA','bestval_PA','BIC_PA')
+savename_noExt = regexp(savename,'\.mat','split'); % pop the extension off so we can modify the savename
+savename_noExt = savename_noExt{1}; % just get the bit before the extension (the rest will be empty anyway!)
+
+for idxVariations = 1:size(fitVariations,1)
+    thisBestPar = bestpar{:,:,idxVariations};
+    thisBestVal = bestval{:,:,idxVariations};
+    thisBIC = BIC{:,:,idxVariations};
+    save([savename_noExt '_' fitVariations{idxVariations,3} '.mat'],'thisBestPar','thisBestVal','thisBIC','rseed','settings');%,'bestpar_PA','bestval_PA','BIC_PA')
+end
 
 end
