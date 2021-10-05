@@ -14,7 +14,7 @@ p = struct(); % keep some of our parameters tidy
 d = struct(); % set up a structure for the data info
 t = struct(); % set up a structure for temp data
 
-p.file_control = ones(1,20); % for each file, 1 = one participant, 0 = multiple, -1 = unknown, -2 = skip
+p.file_control = ones(1,27); % for each file, 1 = one participant, 0 = multiple, -1 = unknown, -2 = skip
 p.plot_norms = 1;
 p.skip_check_pp = 1;
 p.plot_coh = 1;
@@ -23,11 +23,11 @@ p.plot_match = 1;
 p.check_match = 0;
 p.plot_coh_ang = 1;
 p.check_coh_ang = 0;
-p.skip_check_lba = 1;
+p.skip_check_lba = 0;
 p.plot_rt_hist = 1;
 p.plot_rts = 1;
 p.plot_pc = 1;
-p.skip_check_lbacont = 1;
+p.skip_check_lbacont = 0;
 
 
 % set up variables
@@ -342,59 +342,79 @@ for subject = 1:length(t.alldata) % loop through each subject
     %     d.subjects(subject).easy_dots_rule_value = t.easy_dots_rule_value;
     d.subjects(subject).coherence_values = t.coherence_values;
     d.subjects(subject).updated_coherence_values = t.updated_coherence_values;
-    
-    disp('id:')
-    disp(t.id)
-    
-    disp('*coherence thresholding one*')
-    disp('accuracy (low coh/hard threshold is .9, high coh/easy threshold is .7)')
-    disp(accthis(d.subjects(subject).coh.correct))
-    disp('% invalid')
-    disp((length(find(d.subjects(subject).coh.rt == -1))/length(d.subjects(subject).coh.rt)))
-    disp('% fast responses')
-    disp((length(find(d.subjects(subject).coh.rt >=0 & d.subjects(subject).coh.rt < 400))/length(d.subjects(subject).coh.rt)))
+        
+%     disp('*coherence thresholding one*')
+%     disp('accuracy (low coh/hard threshold is .9, high coh/easy threshold is .7)')
+%     disp(accthis(d.subjects(subject).coh.correct))
+%     disp('% invalid')
+%     disp((length(find(d.subjects(subject).coh.rt == -1))/length(d.subjects(subject).coh.rt)))
+%     disp('% fast responses')
+%     disp((length(find(d.subjects(subject).coh.rt >=0 & d.subjects(subject).coh.rt < 400))/length(d.subjects(subject).coh.rt)))
     if p.plot_norms
         figure; normplot(d.subjects(subject).coh.rt)
         title('coherence thresholding')
         export_fig(fullfile(figdir,strcat(num2str(subject),'_coh_normplot.jpeg')),'-transparent')
     end
-    disp('*rule*')
-    disp('accuracy (hard threshold is .6)')
-    disp(accthis(d.subjects(subject).rule.correct))
-    disp('% invalid')
-    disp((length(find(d.subjects(subject).rule.rt == -1))/length(d.subjects(subject).rule.rt)))
-    disp('% fast responses')
-    disp((length(find(d.subjects(subject).rule.rt >=0 & d.subjects(subject).rule.rt < 400))/length(d.subjects(subject).rule.rt)))
+%     disp('*rule*')
+%     disp('accuracy (hard threshold is .6)')
+%     disp(accthis(d.subjects(subject).rule.correct))
+%     disp('% invalid')
+%     disp((length(find(d.subjects(subject).rule.rt == -1))/length(d.subjects(subject).rule.rt)))
+%     disp('% fast responses')
+%     disp((length(find(d.subjects(subject).rule.rt >=0 & d.subjects(subject).rule.rt < 400))/length(d.subjects(subject).rule.rt)))
     if p.plot_norms
         figure; normplot(d.subjects(subject).rule.rt)
         title('match thresholding')
         export_fig(fullfile(figdir,strcat(num2str(subject),'_match_normplot.jpeg')),'-transparent')
     end
     
-    disp('*coherence second thresholding*')
-    disp('accuracy (low coh/hard threshold is .9, high coh/easy threshold is .7)')
-    disp(accthis(d.subjects(subject).coh_ang.correct))
-    disp('% invalid')
-    disp((length(find(d.subjects(subject).coh_ang.rt == -1))/length(d.subjects(subject).coh_ang.rt)))
-    disp('% fast responses')
-    disp((length(find(d.subjects(subject).coh_ang.rt >=0 & d.subjects(subject).coh_ang.rt < 400))/length(d.subjects(subject).coh_ang.rt)))
+%     disp('*coherence second thresholding*')
+%     disp('accuracy (low coh/hard threshold is .9, high coh/easy threshold is .7)')
+%     disp(accthis(d.subjects(subject).coh_ang.correct))
+%     disp('% invalid')
+%     disp((length(find(d.subjects(subject).coh_ang.rt == -1))/length(d.subjects(subject).coh_ang.rt)))
+%     disp('% fast responses')
+%     disp((length(find(d.subjects(subject).coh_ang.rt >=0 & d.subjects(subject).coh_ang.rt < 400))/length(d.subjects(subject).coh_ang.rt)))
     if p.plot_norms
         figure; normplot(d.subjects(subject).coh_ang.rt)
         title('coherence second thresholding')
         export_fig(fullfile(figdir,strcat(num2str(subject),'_coh_ang_normplot.jpeg')),'-transparent')
     end
-    disp('*experiment*')
-    disp('accuracy (.6 is a floor effect)')
-    disp(accthis(d.subjects(subject).exp.correct))
-    disp('$ invalid')
-    disp((length(find(d.subjects(subject).exp.rt == -1))/length(d.subjects(subject).exp.rt)))
-    disp('% fast responses')
-    disp((length(find(d.subjects(subject).exp.rt >=0 & d.subjects(subject).exp.rt < 400))/length(d.subjects(subject).exp.rt)))
+%     disp('*experiment*')
+%     disp('accuracy (.6 is a floor effect)')
+%     disp(accthis(d.subjects(subject).exp.correct))
+%     disp('$ invalid')
+%     disp((length(find(d.subjects(subject).exp.rt == -1))/length(d.subjects(subject).exp.rt)))
+%     disp('% fast responses')
+%     disp((length(find(d.subjects(subject).exp.rt >=0 & d.subjects(subject).exp.rt < 400))/length(d.subjects(subject).exp.rt)))
     if p.plot_norms
         figure; normplot(d.subjects(subject).exp.rt)
         title('experiment')
         export_fig(fullfile(figdir,strcat(num2str(subject),'_exp_normplot.jpeg')),'-transparent')
     end
+    
+    % put together a table for quick checking
+    tmpTableTitles = {'exp_part' 'accuracy' 'percent_invalid' 'percent_fast'};
+    tmpTable = {...
+        'coh thresh 1 (70-90)' ...
+        accthis(d.subjects(subject).coh.correct) ...
+        (length(find(d.subjects(subject).coh.rt == -1))/length(d.subjects(subject).coh.rt))*100 ...
+        (length(find(d.subjects(subject).coh.rt >=0 & d.subjects(subject).coh.rt < 400))/length(d.subjects(subject).coh.rt))*100;...
+        'rule thresh (>60)' ...
+        accthis(d.subjects(subject).rule.correct) ...
+        (length(find(d.subjects(subject).rule.rt == -1))/length(d.subjects(subject).rule.rt))*100 ...
+        (length(find(d.subjects(subject).rule.rt >=0 & d.subjects(subject).rule.rt < 400))/length(d.subjects(subject).rule.rt))*100;...
+        'coh thresh 2 (70-90)' ...
+        accthis(d.subjects(subject).coh_ang.correct) ...
+        (length(find(d.subjects(subject).coh_ang.rt == -1))/length(d.subjects(subject).coh_ang.rt))*100 ...
+        (length(find(d.subjects(subject).coh_ang.rt >=0 & d.subjects(subject).coh_ang.rt < 400))/length(d.subjects(subject).coh_ang.rt))*100;...
+        'experiment (>60)' ...
+        accthis(d.subjects(subject).exp.correct) ...
+        (length(find(d.subjects(subject).exp.rt == -1))/length(d.subjects(subject).exp.rt))*100 ...
+        (length(find(d.subjects(subject).exp.rt >=0 & d.subjects(subject).exp.rt < 400))/length(d.subjects(subject).exp.rt))*100;...
+        };
+    behavCheckTbl = cell2table(tmpTable);
+    behavCheckTbl.Properties.VariableNames = tmpTableTitles;
     
     if p.skip_check_pp
         t.do_pp = 'y';
@@ -482,20 +502,20 @@ for subject = 1:length(t.alldata) % loop through each subject
             end
         end
         if p.plot_coh_ang
-            [t.coh_easy,t.coh_hard,~,t.psignifit_array] = coh_thresholding(d.subjects(subject).coh_ang,figdir,'thresholding_2',subject,1);
+            [t.coh_easy2,t.coh_hard2,~,t.psignifit_array] = coh_thresholding(d.subjects(subject).coh_ang,figdir,'thresholding_2',subject,1);
             if p.check_coh_ang
                 [t.jscoh_easy,t.jscoh_hard,~,t.jscoh_psignifit_array] = coh_thresholding(t.coh_psignifit_array_updated,figdir,p.save_file,subject,0,1);
                 disp('**checking js vs matlab psignifit for coherence two**')
                 disp('*easy:*')
                 disp('matlab:')
-                disp(t.coh_easy)
+                disp(t.coh_easy2)
                 disp('js:')
                 disp(t.jscoh_easy)
                 t.prompt = 'press enter to continue';
                 input(t.prompt,'s');
                 disp('*hard:*')
                 disp('matlab:')
-                disp(t.coh_hard)
+                disp(t.coh_hard2)
                 disp('js:')
                 disp(t.jscoh_hard)
                 t.prompt = 'press enter to continue';
@@ -510,17 +530,38 @@ for subject = 1:length(t.alldata) % loop through each subject
             else
                 disp('*coherence thresholds two*')
                 disp('easy:')
-                disp(t.coh_easy)
+                disp(t.coh_easy2)
                 disp('hard:')
-                disp(t.coh_hard)
+                disp(t.coh_hard2)
             end
         end
+        
+        % put together a table for quick checking
+        tmpTableTitles = {'exp_part' 'easy_threshold' 'hard_threshold'};
+        tmpTable = {...
+            'coh thresh 1 (percent coh)' ...
+            t.coherence_values(1)*100 ...
+            t.coherence_values(2)*100;...
+            'match thresh (angle)' ...
+            t.rule_values(1) ...
+            t.rule_values(2);...
+            'match thresh (mean rt)' ...
+            mean(t.match_summary(4,:)) ...
+            mean(t.match_summary(6,:));...
+            'coh thresh 2 (percent coh)' ...
+            t.updated_coherence_values(1)*100 ...
+            t.updated_coherence_values(2)*100;...
+            };
+        psychphysCheckTbl = cell2table(tmpTable);
+        psychphysCheckTbl.Properties.VariableNames = tmpTableTitles;
+        
+        fprintf(1,'participant id: %s\n',t.id);
+        disp(behavCheckTbl)
+        disp(psychphysCheckTbl)
         
         if p.skip_check_lba
             t.do_lba = 'y';
         else
-            disp('id:')
-            disp(t.id)
             t.prompt = 'Continue to process for LBA fit with this participant? y/n [y]: ';
             t.do_lba = input(t.prompt,'s');
             if isempty(t.do_lba); t.do_lba = 'y'; end
