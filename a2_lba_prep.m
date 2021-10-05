@@ -2,6 +2,7 @@
 % Dorian Minors
 % Created: JAN21
 %
+% assumes a variable d.subjects(subject).lba == 'y' || 'n'
 %
 %% set up
 
