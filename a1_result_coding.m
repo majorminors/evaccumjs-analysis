@@ -17,7 +17,7 @@ t = struct(); % set up a structure for temp data
 % set up variables
 rootdir = pwd; %% root directory - used to inform directory mappings
 
-datadir = fullfile(rootdir,'data','behav_9_test'); % location of data
+datadir = fullfile(rootdir,'data','behav_9'); % location of data
 dataToProcess = 'converted_data'; % where is the converted data?
 saveFileName = 'processed_data'; % what to save the processed data as
 
@@ -387,9 +387,9 @@ for subject = 1:length(t.alldata) % loop through each subject
     if t.do_pp == 'y'
         % check thresholds
         if p.plot_coh
-            [t.coh_easy,t.coh_hard,~,t.psignifit_array] = coh_thresholding(d.subjects(subject).coh,figdir,'thresholding_1',subject,1);
+            [t.coh_easy,t.coh_hard,~,t.psignifit_array] = coh_thresholding(d.subjects(subject).coh,figdir,'_1',subject,1);
             if p.check_coh
-                [t.jscoh_easy,t.jscoh_hard,~,t.jscoh_psignifit_array] = coh_thresholding(t.coh.data_array,figdir,'thresholding_with_jsarray_1',subject,0,1);
+                [t.jscoh_easy,t.jscoh_hard,~,t.jscoh_psignifit_array] = coh_thresholding(t.coh.data_array,figdir,'_thresholding_with_jsarray_1',subject,0,1);
                 % put together a table for quick checking
                 disp('check coherence threshold values')
                 tmpTableTitles = {'condition' 'coh_thresh_used' 'coh_thresh_matlab_jspsych_array_used' 'coh_thresh_matlab_array_generated'};
@@ -459,9 +459,9 @@ for subject = 1:length(t.alldata) % loop through each subject
             end
         end
         if p.plot_coh_ang
-            [t.coh_easy,t.coh_hard,~,t.psignifit_array] = coh_thresholding(d.subjects(subject).coh_ang,figdir,'thresholding_2',subject,1);
+            [t.coh_easy,t.coh_hard,~,t.psignifit_array] = coh_thresholding(d.subjects(subject).coh_ang,figdir,'_2',subject,1);
             if p.check_coh_ang
-                [t.jscoh_easy,t.jscoh_hard,~,t.jscoh_psignifit_array] = coh_thresholding(t.coh_ang.data_array,figdir,'thresholding_with_jsarray_2',subject,0,1);
+                [t.jscoh_easy,t.jscoh_hard,~,t.jscoh_psignifit_array] = coh_thresholding(t.coh_ang.data_array,figdir,'_thresholding_with_jsarray_2',subject,0,1);
                 % put together a table for quick checking
                 disp('check updated threshold values')
                 tmpTableTitles = {'condition' 'coh_thresh_used' 'coh_thresh_matlab_jspsych_array_used' 'coh_thresh_matlab_array_generated'};
