@@ -12,8 +12,8 @@ t = struct(); % set up a structure for temp data
 % set up variables
 rootdir = '/group/woolgar-lab/projects/Dorian/evaccum/evaccumjs-analysis'; %'C:\Users\doria\Nextcloud\desiderata\desiderata\04 Research\05 Evidence Accumulation\01 EvAccum Code'; %
 
-datadir = fullfile(rootdir,'data','behav_9_001optim_splitConds');
-modelIdentifier = 'easyCoh';
+datadir = fullfile(rootdir,'data','behav_9_100optim_splitConds');
+modelIdentifier = 'easyRule';
 modelNamePattern = ['Model_%s' '_' modelIdentifier '.mat'];
 num_subjects = 17;
 
@@ -74,6 +74,7 @@ end
 
 
 %% plot results
+% BIC_all([5 10],:)=[]; % delete removed models
 BIC_all(5,:)=[]; % delete removed models
 [posterior_all, out_all] = VBA_groupBMC(BIC_all) ;
 %out_pd;
@@ -84,17 +85,17 @@ n = size(BIC_all,2);
 
 % plot BICs by subject
 figure; b = bar(BIC_all'*-0.5,'FaceColor',[0 0.4470 0.7410]);
-ylim([20400 20900]);
-b(1).FaceColor = [.5 0 .5];
-b(2).FaceColor = [.25 0 .25];
-% b(5).FaceColor = [.9 0 .9];
-b(9).FaceColor = [.5 0 .5];
-% b(10).FaceColor = [.5 0 .5];
+ylim([min(min(BIC_all'*-0.5))-10 max(max(BIC_all'*-0.5))+10]);
+% b(1).FaceColor = [.5 0 .5];
+% b(2).FaceColor = [.25 0 .25];
+% % b(5).FaceColor = [.9 0 .9];
+% b(9).FaceColor = [.5 0 .5];
+% % b(10).FaceColor = [.5 0 .5];
 export_fig(fullfile(figDir,'subjectBICs.jpeg'),'-transparent');
 
 % plot BICs by model
 figure; b = bar(BIC_all*-0.5,'FaceColor',[0 0.4470 0.7410]);
-ylim([20400 20900]);
+ylim([min(min(BIC_all*-0.5))-10 max(max(BIC_all*-0.5))+10]);
 export_fig(fullfile(figDir,'modelBICs.jpeg'),'-transparent');
 
 %plot BIC (mean)
@@ -108,30 +109,31 @@ figure; b = bar(meanBIC);
 ylim([min(meanBIC-semBIC)-10 max(meanBIC+semBIC)+10]);
 b.FaceColor = 'flat'; % change face colour to highlight winner
 b.CData(1,:) = [.5 0 .5];
-b.CData(2,:) = [.25 0 .25];
+b.CData(2,:) = [.5 0 .5];
 % b.CData(5,:) = [.9 0 .9];
-b.CData(9,:) = [.5 0 .5];
-% b.CData(10,:) = [.5 0 .5];
-hold on
-er = errorbar(1:K,meanBIC,semBIC,semBIC);
-er.Color = [0 0 0];                            
-er.LineStyle = 'none';
-
-% same but ylimed around mean bics alone in case sem is huge
-export_fig(fullfile(figDir,'meanBICs.jpeg'),'-transparent');
-figure; b = bar(meanBIC);
-ylim([min(meanBIC)-10 max(meanBIC)+10]);
-b.FaceColor = 'flat';
-b.CData(1,:) = [.5 0 .5];
-b.CData(2,:) = [.25 0 .25];
-% b.CData(5,:) = [.9 0 .9];
-b.CData(9,:) = [.5 0 .5];
+% b.CData(9,:) = [.5 0 .5];
 % b.CData(10,:) = [.5 0 .5];
 hold on
 er = errorbar(1:K,meanBIC,semBIC,semBIC);
 er.Color = [0 0 0];                            
 er.LineStyle = 'none';
 export_fig(fullfile(figDir,'meanBICs-sem.jpeg'),'-transparent');
+
+% same but ylimed around mean bics alone in case sem is huge
+figure; b = bar(meanBIC);
+ylim([min(meanBIC)-5 max(meanBIC)+5]);
+b.FaceColor = 'flat';
+b.CData(1,:) = [.5 0 .5];
+b.CData(2,:) = [.5 0 .5];
+% b.CData(5,:) = [.9 0 .9];
+% b.CData(9,:) = [.5 0 .5];
+% b.CData(10,:) = [.5 0 .5];
+hold on
+er = errorbar(1:K,meanBIC,semBIC,semBIC);
+er.Color = [0 0 0];                            
+er.LineStyle = 'none';
+export_fig(fullfile(figDir,'meanBICs.jpeg'),'-transparent');
+
 
 fig75 = figure(75);
 pos2 = [205   429   912   377];
@@ -197,7 +199,7 @@ set(hp,'FaceColor',[0.3843    0.4784    0.6157],'LineStyle','none')
      h = get(gca,'Children');
      set(gca,'Children',[h(3) h(2) h(1) h(4)]);
 %     %export_fig(['ProbModComp','.png'],'-png','-transparent','-painters')
-export_fig(fullfile(modeldir,'model_freq.jpeg'),'-transparent');
+export_fig(fullfile(figDir,'model_freq.jpeg'),'-transparent');
 % % plot CTR attributions
 % fig76 = figure(76);
 % pos2 = [ 183   257   876   638];

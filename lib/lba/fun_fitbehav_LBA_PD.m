@@ -102,13 +102,14 @@ for idxsubj = 1:num_subjs
     %         EcHr = 2 = easy coherence, hard matching
     %         HcEr = 3 = hard coherence, easy matching
     %         HcHr = 4 = hard coherence, hard matching
-    fitVariations = {'fiterror_cell_RDK',[1:4],'allConds';...
-        'fiterror_cell_EASYCOH',[1,2],'easyCoh';...
-        'fiterror_cell_HARDCOH',[3,4],'hardCoh';...
-        'fiterror_cell_EASYRULE',[1,3],'easyRule';...
-        'fiterror_cell_HARDRULE',[2,4],'hardRule';};
+%     fitVariations = {'fiterror_cell_RDK',[1:4],'allConds';...
+%         'fiterror_cell_EASYCOH',[1,2],'easyCoh';...
+%         'fiterror_cell_HARDCOH',[3,4],'hardCoh';...
+%         'fiterror_cell_EASYRULE',[1,3],'easyRule';...
+%         'fiterror_cell_HARDRULE',[2,4],'hardRule';};
+fitVariations = settings.fitVariations;
     for idxVariations = 1:size(fitVariations,1)
-        [bestpar{idxsubj,1,idxVariations},bestval{idxsubj,1,idxVariations},BIC{idxsubj,1,idxVariations}]=fitparams_refine_template_RDK(fitVariations{idxVariations,1},Model_Feature,{data2fit{idxsubj,fitVariations{idxVariations,2}}},randiter,nosession,[],parange,bayesian);%#ok
+        [allbestpar{idxsubj,1,idxVariations},allbestval{idxsubj,1,idxVariations},allBIC{idxsubj,1,idxVariations}]=fitparams_refine_template_RDK(fitVariations{idxVariations,1},Model_Feature,{data2fit{idxsubj,fitVariations{idxVariations,2}}},randiter,nosession,[],parange,bayesian);%#ok
     end
     % related to above, no idea what I was doing with this easy hard
     % business
@@ -124,10 +125,10 @@ savename_noExt = regexp(savename,'\.mat','split'); % pop the extension off so we
 savename_noExt = savename_noExt{1}; % just get the bit before the extension (the rest will be empty anyway!)
 
 for idxVariations = 1:size(fitVariations,1)
-    thisBestPar = bestpar{:,:,idxVariations};
-    thisBestVal = bestval{:,:,idxVariations};
-    thisBIC = BIC{:,:,idxVariations};
-    save([savename_noExt '_' fitVariations{idxVariations,3} '.mat'],'thisBestPar','thisBestVal','thisBIC','rseed','settings');%,'bestpar_PA','bestval_PA','BIC_PA')
+    bestpar = allbestpar(:,:,idxVariations);
+    bestval = allbestval(:,:,idxVariations);
+    BIC = allBIC(:,:,idxVariations);
+    save([savename_noExt '_' fitVariations{idxVariations,3} '.mat'],'bestpar','bestval','BIC','rseed','settings');%,'bestpar_PA','bestval_PA','BIC_PA')
 end
 
 end

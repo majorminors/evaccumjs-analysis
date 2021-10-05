@@ -110,7 +110,7 @@ end
 hold off
 % diplay rts on a figure
 rts = figure('visible','off');
-plot(summary(2,:),summary(4,:),'ro:')
+plot(summary(2,:),summary(4,:),'ro:');
 if save_this
     %savefig(rts,[save_file '_rts']);
     export_fig(fullfile(save_dir,strcat(num2str(subjectid),save_file,'_coh_rts.jpeg')),'-transparent');
