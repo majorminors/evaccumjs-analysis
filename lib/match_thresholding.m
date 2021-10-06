@@ -42,6 +42,11 @@ function [easy_threshold,hard_threshold,summary,psignifit_array] = match_thresho
 low_threshold_pc = 0.6; % percent correct for your hard threshold (uses inverse of this number for easy)
 num_blocks = 2;
 
+% init these for later
+% (1) = easy dots, (2) = hard dots, (3) = combination threshold
+low_threshold = zeros(1,3);
+high_threshold = zeros(1,3);
+
 if ~exist('save_this','var')
     save_this = 0;
 end
@@ -143,49 +148,50 @@ sigmoid_all = figure('visible','on');
 hold on
 % find the x value for proportion correct:
 [~, low_threshold_idx] = min(abs(plotline.YData-low_threshold_pc(1))); % first find the index of the value closest to the threshold pc
-low_threshold = plotline.XData(low_threshold_idx); % then find the value using the index
-high_threshold = -90-low_threshold; % this is the inverse of the low_threshold value - currently I've flipped everything into negative so it is oriented correctly in the psignifit tools
+low_threshold(3) = plotline.XData(low_threshold_idx); % then find the value using the index
+high_threshold(3) = -90-low_threshold(3); % this is the inverse of the low_threshold value - currently I've flipped everything into negative so it is oriented correctly in the psignifit tools
 % add plot lines at the threshold value on y:
 plot([-90 -0], [low_threshold_pc low_threshold_pc], '-', 'Color',[1 0 0]);
 [~, high_pc_idx] = min(abs(plotline.XData-high_threshold(1))); % then find the index of the value closest to the high_threshold
 high_threshold_pc = plotline.YData(high_pc_idx); % then find the value using the index and print that in the command window
 plot([-90 -0], [high_threshold_pc high_threshold_pc], '-', 'Color',[0 1 0]);
 % add plot lines at the threshold value on x:
-plot([low_threshold low_threshold], [0.3 1], '-', 'Color',[1 0 0]);
-plot([high_threshold high_threshold], [0.3 1], '-', 'Color',[0 1 0]);
+plot([low_threshold(3) low_threshold(3)], [0.3 1], '-', 'Color',[1 0 0]);
+plot([high_threshold(3) high_threshold(3)], [0.3 1], '-', 'Color',[0 1 0]);
 if save_this
 %savefig([save_file '_lowcohsigmoid']);
 export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_sigmoid_both.jpeg')),'-transparent');
 end
 hold off
 
-% make a sigmoid and put it on a figure
+% make a sigmoid and put it on a figure: hard coherence/low coherence
 sigmoid_low = figure('visible','on');
 [plotresult, plotline, plotdata] = psychcurve(neg_psignifit_array(:,:,2));
 hold on
 % find the x value for proportion correct:
 [~, low_threshold_idx] = min(abs(plotline.YData-low_threshold_pc(1))); % first find the index of the value closest to the threshold pc
-low_threshold = plotline.XData(low_threshold_idx); % then find the value using the index
-high_threshold = -90-low_threshold; % this is the inverse of the low_threshold value - currently I've flipped everything into negative so it is oriented correctly in the psignifit tools
+low_threshold(2) = plotline.XData(low_threshold_idx); % then find the value using the index
+high_threshold(2) = -90-low_threshold(2); % this is the inverse of the low_threshold value - currently I've flipped everything into negative so it is oriented correctly in the psignifit tools
 % add plot lines at the threshold value on y:
 plot([-90 -0], [low_threshold_pc low_threshold_pc], '-', 'Color',[1 0 0]);
 [~, high_pc_idx] = min(abs(plotline.XData-high_threshold(1))); % then find the index of the value closest to the high_threshold
 high_threshold_pc = plotline.YData(high_pc_idx); % then find the value using the index and print that in the command window
 plot([-90 -0], [high_threshold_pc high_threshold_pc], '-', 'Color',[0 1 0]);
 % add plot lines at the threshold value on x:
-plot([low_threshold low_threshold], [0.3 1], '-', 'Color',[1 0 0]);
-plot([high_threshold high_threshold], [0.3 1], '-', 'Color',[0 1 0]);
+plot([low_threshold(2) low_threshold(2)], [0.3 1], '-', 'Color',[1 0 0]);
+plot([high_threshold(2) high_threshold(2)], [0.3 1], '-', 'Color',[0 1 0]);
 if save_this
 %savefig([save_file '_lowcohsigmoid']);
-export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_easy_sigmoid.jpeg')),'-transparent');
+export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_hard_sigmoid.jpeg')),'-transparent');
 end
 hold off
 % diplay rts on a figure
 rts_low = figure('visible','off');
 plot(summary(2,:),summary(4,:),'ro:');
 %savefig([save_file '_low_coh_rts']);
-export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_easy_rts.jpeg')),'-transparent');
-% make a sigmoid and put it on a figure
+export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_hard_rts.jpeg')),'-transparent');
+
+% make a sigmoid and put it on a figure: easy coherence/high coherence
 sigmoid_hi = figure('visible','off');
 [plotresult, plotline, plotdata] = psychcurve(neg_psignifit_array(:,:,1));
 hold on
@@ -199,7 +205,7 @@ plot([low_threshold low_threshold], [0.3 1], '-', 'Color',[1 0 0]);
 plot([high_threshold high_threshold], [0.3 1], '-', 'Color',[0 1 0]);
 if save_this
 %savefig([save_file '_hicohsigmoid']);
-export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_hard_sigmoid.jpeg')),'-transparent');
+export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_easy_sigmoid.jpeg')),'-transparent');
 end
 hold off
 % diplay rts on a figure
@@ -207,7 +213,7 @@ rts_hi = figure('visible','off');
 plot(summary(2,:),summary(6,:),'ro:');
 %savefig([save_file '_hi_coh_rts']);
 if save_this
-export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_hard_rts.jpeg')),'-transparent');
+export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_easy_rts.jpeg')),'-transparent');
 end
 
 low_threshold = abs(low_threshold);
