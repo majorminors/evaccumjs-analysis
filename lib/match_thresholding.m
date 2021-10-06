@@ -195,14 +195,18 @@ export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_hard_rts.jpeg')),
 sigmoid_hi = figure('visible','off');
 [plotresult, plotline, plotdata] = psychcurve(neg_psignifit_array(:,:,1));
 hold on
-[~, low_pc_idx] = min(abs(plotline.XData-low_threshold(1))); % then find the index of the value closest to the high_threshold
-low_threshold_pc = plotline.YData(low_pc_idx); % then find the value using the index and print that in the command window
+% find the x value for proportion correct:
+[~, low_threshold_idx] = min(abs(plotline.YData-low_threshold_pc(1))); % first find the index of the value closest to the threshold pc
+low_threshold(1) = plotline.XData(low_threshold_idx); % then find the value using the index
+high_threshold(1) = -90-low_threshold(1); % this is the inverse of the low_threshold value - currently I've flipped everything into negative so it is oriented correctly in the psignifit tools
+% add plot lines at the threshold value on y:
+plot([-90 -0], [low_threshold_pc low_threshold_pc], '-', 'Color',[1 0 0]);
 [~, high_pc_idx] = min(abs(plotline.XData-high_threshold(1))); % then find the index of the value closest to the high_threshold
 high_threshold_pc = plotline.YData(high_pc_idx); % then find the value using the index and print that in the command window
-plot([-90 -0], [low_threshold_pc low_threshold_pc], '-', 'Color',[1 0 0]);
-plot([-90 -0], [low_threshold_pc low_threshold_pc], '-', 'Color',[1 0 0]);
-plot([low_threshold low_threshold], [0.3 1], '-', 'Color',[1 0 0]);
-plot([high_threshold high_threshold], [0.3 1], '-', 'Color',[0 1 0]);
+plot([-90 -0], [high_threshold_pc high_threshold_pc], '-', 'Color',[0 1 0]);
+% add plot lines at the threshold value on x:
+plot([low_threshold(1) low_threshold(1)], [0.3 1], '-', 'Color',[1 0 0]);
+plot([high_threshold(1) high_threshold(1)], [0.3 1], '-', 'Color',[0 1 0]);
 if save_this
 %savefig([save_file '_hicohsigmoid']);
 export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_easy_sigmoid.jpeg')),'-transparent');
@@ -216,6 +220,8 @@ if save_this
 export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_easy_rts.jpeg')),'-transparent');
 end
 
+% change from negative values to positive ones (needed negative to plot
+% correctly)
 low_threshold = abs(low_threshold);
 high_threshold = abs(high_threshold);
 
@@ -237,10 +243,10 @@ copyobj(allchild(get(rts_low,'CurrentAxes')),visualise(2));
 copyobj(allchild(get(sigmoid_hi,'CurrentAxes')),visualise(3));
 copyobj(allchild(get(rts_hi,'CurrentAxes')),visualise(4));
 % add a legend
-t(1)=title(visualise(1),'percent correct low coh');
-t(2)=title(visualise(2),'reaction time low coh');
-t(3)=title(visualise(3),'percent correct hi coh');
-t(4)=title(visualise(4),'reaction time hi coh');
+t(1)=title(visualise(1),'percent correct hard coh');
+t(2)=title(visualise(2),'reaction time hard coh');
+t(3)=title(visualise(3),'percent correct easy coh');
+t(4)=title(visualise(4),'reaction time easy coh');
 if save_this
 export_fig(fullfile(save_dir,strcat(num2str(subjectid),'_match_complete.jpeg')),'-transparent');
 end
