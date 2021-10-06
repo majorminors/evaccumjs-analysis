@@ -43,9 +43,10 @@ low_threshold_pc = 0.6; % percent correct for your hard threshold (uses inverse 
 num_blocks = 2;
 
 % init these for later
-% (1) = easy dots, (2) = hard dots, (3) = combination threshold
-low_threshold = zeros(1,3);
-high_threshold = zeros(1,3);
+% (1) = easy dots, (2) = hard dots, (3) = combination of easy/hard trials
+% threshold, (4) = average of easy and hard dots threshold
+low_threshold = zeros(1,4);
+high_threshold = zeros(1,4);
 
 if ~exist('save_this','var')
     save_this = 0;
@@ -224,6 +225,10 @@ end
 % correctly)
 low_threshold = abs(low_threshold);
 high_threshold = abs(high_threshold);
+
+% get an average value now
+low_threshold(4) = (low_threshold(1)+low_threshold(2))/2;
+high_threshold(4) = (high_threshold(1)+high_threshold(2))/2;
 
 % load those figures into variables
 % sigmoid_low=hgload(fullfile(datadir, data_file, [data_file '_lowcohsigmoid.fig']));
