@@ -56,8 +56,8 @@ if exist('preformatted_array','var')
     if preformatted_array
         neg_psignifit_array(:,:,1) = input_data(:,:,1);
         neg_psignifit_array(:,:,2) = input_data(:,:,2);
-        neg_psignifit_array(1,:,3) = input_data(1,:,1);
-        neg_psignifit_array(:,:,3) = input_data(:,:,1)+input_data(:,:,2);
+        neg_psignifit_array(:,1,3) = input_data(:,1,1);
+        neg_psignifit_array(:,2:3,3) = input_data(:,2:3,1)+input_data(:,2:3,2);
         %neg_psignifit_array(1,:,1:3) = ones(1,length(neg_psignifit_array(1,:,3)),3);
         psignifit_array = neg_psignifit_array;
     end
