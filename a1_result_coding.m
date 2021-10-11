@@ -401,7 +401,7 @@ for subject = 1:length(t.alldata) % loop through each subject
                 tmp = psychcurve(t.coh.data_array,0.9);
                 t.correct_thresh_easy = tmp.Fit(1);
                 tmp = psychcurve(t.coh.data_array,0.7);
-                t.correct_thresh_hard = tmp.Fit(1);
+                t.correct_thresh_hard = tmp.Fit(1); clear tmp;
                 % put together a table for quick checking
                 disp('check coherence threshold values')
                 tmpTableTitles = {'condition' 'coh_thresh_used' 'coh_thresh_matlab_jspsych_array_used' 'correctly_obtained_threshold' 'coh_thresh_matlab_array_generated' 'difference_with_same_array' 'difference_from_correct_threshold'};
@@ -418,8 +418,8 @@ for subject = 1:length(t.alldata) % loop through each subject
                     t.jscoh_hard ...
                     t.coh_hard ...
                     t.correct_thresh_hard ...
-                    t.correct_thresh_hard-t.jscoh_hard ...
-                    t.coherence_values(2)-t.jscoh_hard;...
+                    t.coherence_values(2)-t.jscoh_hard ...
+                    t.correct_thresh_hard-t.jscoh_hard;...
                     };
                 tmpCheckTbl = cell2table(tmpTable);
                 tmpCheckTbl.Properties.VariableNames = tmpTableTitles;
@@ -431,9 +431,9 @@ for subject = 1:length(t.alldata) % loop through each subject
                     input(t.prompt,'s');
                 else
                     figure;
-                    vals = [d.subjects(subject).coherence_values; d.subjects(subject).coherence_vals_matlab; d.subjects(subject).coherence_vals_matlab_correct];
+                    vals = [d.subjects(subject).coherence_values; d.subjects(subject).coherence_vals_matlab_correct; d.subjects(subject).coherence_vals_matlab_orig];
                     bar(vals,'FaceColor',[0.0 0.502 0.502]);
-                    set(gca,'XTickLabel',{'python' 'matlab_orig' 'matlab_correct'});
+                    set(gca,'XTickLabel',{'python' 'matlab correct' 'matlab orig'});
                     ylim([0, 1]);
                     hold on
                     for i = 1:size(vals,2)
@@ -522,33 +522,42 @@ for subject = 1:length(t.alldata) % loop through each subject
             [t.coh_easy,t.coh_hard,~,t.psignifit_array] = coh_thresholding(d.subjects(subject).coh_ang,figdir,'_2',subject,1);
             if p.check_coh_ang
                 [t.jscoh_easy,t.jscoh_hard,~,t.jscoh_psignifit_array] = coh_thresholding(t.coh_ang.data_array,figdir,'_thresholding_with_jsarray_2',subject,0,1);
+                tmp = psychcurve(t.coh_ang.data_array,0.9);
+                t.correct_thresh_easy = tmp.Fit(1);
+                tmp = psychcurve(t.coh_ang.data_array,0.7);
+                t.correct_thresh_hard = tmp.Fit(1); clear tmp;
                 % put together a table for quick checking
                 disp('check updated threshold values')
-                tmpTableTitles = {'condition' 'coh_thresh_used' 'coh_thresh_matlab_jspsych_array_used' 'coh_thresh_matlab_array_generated' 'difference_with_same_array'};
+                tmpTableTitles = {'condition' 'coh_thresh_used' 'coh_thresh_matlab_jspsych_array_used' 'correctly_obtained_threshold' 'coh_thresh_matlab_array_generated' 'difference_with_same_array' 'difference_from_correct_threshold'};
                 tmpTable = {...
                     'easy' ...
                     t.updated_coherence_values(1) ...
                     t.jscoh_easy ...
                     t.coh_easy ...
-                    t.updated_coherence_values(1)-t.jscoh_easy;...
+                    t.correct_thresh_easy ...
+                    t.updated_coherence_values(1)-t.jscoh_easy ...
+                    t.correct_thresh_hard-t.jscoh_easy;...
                     'hard' ...
                     t.updated_coherence_values(2) ...
                     t.jscoh_hard ...
                     t.coh_hard ...
-                    t.updated_coherence_values(2)-t.jscoh_hard;...
+                    t.correct_thresh_hard ...
+                    t.updated_coherence_values(2)-t.jscoh_hard ...
+                    t.correct_thresh_hard-t.jscoh_hard;...
                     };
                 tmpCheckTbl = cell2table(tmpTable);
                 tmpCheckTbl.Properties.VariableNames = tmpTableTitles;
                 disp(tmpCheckTbl)
-                d.subjects(subject).updated_coherence_vals_matlab = [t.jscoh_easy,t.jscoh_hard];
+                d.subjects(subject).updated_coherence_vals_matlab_orig = [t.jscoh_easy,t.jscoh_hard];
+                d.subjects(subject).updated_coherence_vals_matlab_correct = [t.correct_thresh_easy,t.correct_thresh_hard];
                 if ~p.print_coh_ang
                     t.prompt = 'Press enter to continue';
                     input(t.prompt,'s');
                 else
                     figure;
-                    vals = [d.subjects(subject).updated_coherence_values; d.subjects(subject).updated_coherence_vals_matlab];
+                    vals = [d.subjects(subject).updated_coherence_values; d.subjects(subject).updated_coherence_vals_matlab_correct; d.subjects(subject).updated_coherence_vals_matlab_orig];
                     bar(vals,'FaceColor',[0.0 0.502 0.502]);
-                    set(gca,'XTickLabel',{'python' 'matlab' 'difference'});
+                    set(gca,'XTickLabel',{'python' 'matlab correct' 'matlab orig'});
                     ylim([0, 1]);
                     hold on
                     for i = 1:size(vals,2)
