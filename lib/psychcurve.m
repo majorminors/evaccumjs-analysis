@@ -33,7 +33,7 @@ options             = struct;   % initialize as an empty struct
 
 options.sigmoidName = 'norm';   % choose a cumulative Gaussian as the sigmoid
 options.expType     = '2AFC';   % choose 2-AFC as the paradigm of the experiment
-if ~exist('inputThreshold','var')
+if exist('inputThreshold','var')
     options.threshPC = inputThreshold;
 end
 
