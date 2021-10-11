@@ -24,16 +24,23 @@ saveFileName = 'processed_data'; % what to save the processed data as
 p.plot_norms = 0;
 p.skip_check_pp = 1;
 p.plot_coh = 1;
-p.check_coh = 0;
+p.check_coh = 1;
+p.print_coh = 1; % will print values from the coherence thresholding rather than asking you to look online
 p.plot_match = 1;
-p.check_match = 0;
+p.check_match = 1;
+p.print_match = 1; % will print values from the coherence thresholding rather than asking you to look online
 p.plot_coh_ang = 1;
-p.check_coh_ang = 0;
+p.check_coh_ang = 1;
+p.print_coh_ang = 1; % will print values from the coherence thresholding rather than asking you to look online
 p.skip_check_lba = 1;
 
 % some quick checks
 if p.check_coh == 1 && p.plot_coh == 0; error('you have to plot coherence to check coherence'); end
+if p.check_coh_ang == 1 && p.plot_coh_ang == 0; error('you have to plot coherence thresholding 2 to check it'); end
 if p.check_match == 1 && p.plot_match == 0; error('you have to plot matching to check matching'); end
+if p.check_coh == 0 && p.print_coh == 1; error('you have to check coherence to print it'); end
+if p.check_coh_ang == 0 && p.print_coh_ang == 1; error('you have to check coherence 2 to print it'); end
+if p.check_match == 0 && p.print_match == 1; error('you have to check matching to print it'); end
 
 % cobble together what we need to play with the data and save it
 theData = load(fullfile(datadir,dataToProcess)); % load the data
@@ -47,6 +54,7 @@ p.save_file = fullfile(datadir, saveFileName);
 
 for subject = 1:length(t.alldata) % loop through each subject
     fprintf(1, 'working with subject %1.0f of %1.0f\n', subject, length(t.alldata)); % print that so you can check
+    close all
     
     t.this_subj_data = t.alldata{subject};
 
@@ -408,8 +416,24 @@ for subject = 1:length(t.alldata) % loop through each subject
                 tmpCheckTbl = cell2table(tmpTable);
                 tmpCheckTbl.Properties.VariableNames = tmpTableTitles;
                 disp(tmpCheckTbl)
-                t.prompt = 'Press enter to continue';
-                input(t.prompt,'s');
+                d.subjects(subject).coherence_vals_matlab = [t.jscoh_easy,t.jscoh_hard];
+                if ~p.print_coh
+                    t.prompt = 'Press enter to continue';
+                    input(t.prompt,'s');
+                else
+                    figure;
+                    vals = [d.subjects(subject).coherence_values; d.subjects(subject).coherence_vals_matlab];
+                    bar(vals,'FaceColor',[0.0 0.502 0.502]);
+                    set(gca,'XTickLabel',{'python' 'matlab'});
+                    ylim([0, 1]);
+                    hold on
+                    for i = 1:size(vals,2)
+                        plot([0 1],[1 1]*vals(i,1),'--g')
+                        plot([0 1],[1 1]*vals(i,2),'--r')
+                    end
+                    hold off
+                    export_fig(fullfile(figdir,strcat(num2str(subject),'_coh_python_v_matlab.jpeg')),'-transparent')
+                end
                 % check the arrays
                 disp('check arrays')
                 disp('array used')
@@ -418,12 +442,17 @@ for subject = 1:length(t.alldata) % loop through each subject
                 t.psignifit_array
                 disp('array assembled by matlab from array used')
                 t.jscoh_psignifit_array
-                t.prompt = 'press enter to continue';
-                input(t.prompt,'s');
+                d.subjects(subject).coh_array_check = t.coh.data_array-t.jscoh_psignifit_array;
+                if ~p.print_coh
+                    t.prompt = 'press enter to continue';
+                    input(t.prompt,'s');
+                end
             end
         end
         if p.plot_match
             [t.match_easy,t.match_hard,t.match_summary,t.psignifit_array] = match_thresholding(d.subjects(subject).rule,figdir,p.save_file,subject,1);
+            % threshold values (1) = easy coherence, (2) = hard coherence,
+            % (3) = trials combined threshold, (4) = average threshold
             if p.check_match
                 tmp(:,:,1) = t.rule.data_array_easy;
                 tmp(:,:,2) = t.rule.data_array_hard;
@@ -431,22 +460,38 @@ for subject = 1:length(t.alldata) % loop through each subject
                 % put together a table for quick checking
                 disp('check matching threshold values')
                 disp('note: used values are a limited average of two psignifits; matlab values are a single psignifit on combined arrays easy/hard')
-                tmpTableTitles = {'condition' 'match_thresh_used' 'match_thresh_matlab_jspsych_array_used' 'match_thresh_matlab_array_generated'};
+                tmpTableTitles = {'condition' 'match_thresh_used' 'matlab_jspsych_array_easy_hard_combo_ave' 'matlab_array_generated_easy_hard_combo_ave'};
                 tmpTable = {...
                     'easy' ...
                     t.rule_values(1) ...
-                    t.jsmatch_easy ...
-                    t.match_easy;...
+                    [t.jsmatch_easy(1) t.jsmatch_easy(2) t.jsmatch_easy(3) t.jsmatch_easy(4)] ...
+                    [t.match_easy(1) t.match_easy(2) t.match_easy(3) t.match_easy(4)];...
                     'hard' ...
                     t.rule_values(2) ...
-                    t.jsmatch_hard ...
-                    t.match_hard;...
+                    [t.jsmatch_hard(1) t.jsmatch_hard(2) t.jsmatch_hard(3) t.jsmatch_hard(4)] ...
+                    [t.match_hard(1) t.match_hard(2) t.match_hard(3) t.match_hard(4)];...
                     };
                 tmpCheckTbl = cell2table(tmpTable);
                 tmpCheckTbl.Properties.VariableNames = tmpTableTitles;
                 disp(tmpCheckTbl)
-                t.prompt = 'Press enter to continue';
-                input(t.prompt,'s');
+                d.subjects(subject).rule_vals_matlab = [t.jsmatch_easy(4),t.jsmatch_hard(4)];
+                if ~p.print_match
+                    t.prompt = 'Press enter to continue';
+                    input(t.prompt,'s');
+                else
+                    figure;
+                    vals = [d.subjects(subject).rule_values; d.subjects(subject).rule_vals_matlab];
+                    bar(vals,'FaceColor',[0.0 0.502 0.502]);
+                    set(gca,'XTickLabel',{'python' 'matlab'});
+                    ylim([0, 90]);
+                    hold on
+                    for i = 1:size(vals,2)
+                        plot([0 1],[1 1]*vals(i,1),'--g')
+                        plot([0 1],[1 1]*vals(i,2),'--r')
+                    end
+                    hold off
+                    export_fig(fullfile(figdir,strcat(num2str(subject),'_match_python_v_matlab.jpeg')),'-transparent')
+                end
                 % check the arrays
                 disp('check arrays')
                 disp('array used (easy; hard)')
@@ -456,8 +501,12 @@ for subject = 1:length(t.alldata) % loop through each subject
                 t.psignifit_array
                 disp('array assembled by matlab from array used (easy; hard; combo)')
                 t.jsmatch_psignifit_array
-                t.prompt = 'press enter to continue';
-                input(t.prompt,'s');
+                d.subjects(subject).match_array_check_easy = t.rule.data_array_easy-t.jsmatch_psignifit_array(:,:,1);
+                d.subjects(subject).match_array_check_hard = t.rule.data_array_hard-t.jsmatch_psignifit_array(:,:,2);
+                if ~p.print_match
+                    t.prompt = 'press enter to continue';
+                    input(t.prompt,'s');
+                end
             end
         end
         if p.plot_coh_ang
@@ -482,8 +531,24 @@ for subject = 1:length(t.alldata) % loop through each subject
                 tmpCheckTbl = cell2table(tmpTable);
                 tmpCheckTbl.Properties.VariableNames = tmpTableTitles;
                 disp(tmpCheckTbl)
-                t.prompt = 'Press enter to continue';
-                input(t.prompt,'s');
+                d.subjects(subject).updated_coherence_vals_matlab = [t.jscoh_easy,t.jscoh_hard];
+                if ~p.print_coh_ang
+                    t.prompt = 'Press enter to continue';
+                    input(t.prompt,'s');
+                else
+                    figure;
+                    vals = [d.subjects(subject).updated_coherence_values; d.subjects(subject).updated_coherence_vals_matlab];
+                    bar(vals,'FaceColor',[0.0 0.502 0.502]);
+                    set(gca,'XTickLabel',{'python' 'matlab' 'difference'});
+                    ylim([0, 1]);
+                    hold on
+                    for i = 1:size(vals,2)
+                        plot([0 1],[1 1]*vals(i,1),'--g')
+                        plot([0 1],[1 1]*vals(i,2),'--r')
+                    end
+                    hold off
+                    export_fig(fullfile(figdir,strcat(num2str(subject),'_coh_2_python_v_matlab.jpeg')),'-transparent')
+                end
                 % check the arrays
                 disp('check arrays')
                 disp('array used')
@@ -492,8 +557,11 @@ for subject = 1:length(t.alldata) % loop through each subject
                 t.psignifit_array
                 disp('array assembled by matlab from array used')
                 t.jscoh_psignifit_array
-                t.prompt = 'press enter to continue';
-                input(t.prompt,'s');
+                d.subjects(subject).updated_coh_array_check = t.coh_ang.data_array-t.jscoh_psignifit_array;
+                if ~p.print_coh_ang
+                    t.prompt = 'press enter to continue';
+                    input(t.prompt,'s');
+                end
             end
         end
         
