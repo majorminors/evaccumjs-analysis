@@ -466,32 +466,40 @@ for subject = 1:length(t.alldata) % loop through each subject
                 tmp(:,:,1) = t.rule.data_array_easy;
                 tmp(:,:,2) = t.rule.data_array_hard;
                 [t.jsmatch_easy,t.jsmatch_hard,t.jsmatch_summary,t.jsmatch_psignifit_array] = match_thresholding(tmp,figdir,p.save_file,subject,0,1); clear tmp;
+                tmp2 = psychcurve(t.rule.data_array_easy,0.6);
+                t.correct_thresh_easy_dots = -tmp2.Fit(1);
+                tmp2 = psychcurve(t.rule.data_array_hard,0.6);
+                t.correct_thresh_hard_dots = -tmp2.Fit(1); clear tmp;
+                t.correct_thresh_ave(2) = (t.correct_thresh_easy_dots+t.correct_thresh_hard_dots)/2;
+                t.correct_thresh_ave(1) = 90-t.correct_thresh_ave(2);
                 % put together a table for quick checking
                 disp('check matching threshold values')
-                disp('note: used values are a limited average of two psignifits; matlab values are a single psignifit on combined arrays easy/hard')
-                tmpTableTitles = {'condition' 'match_thresh_used' 'matlab_jspsych_array_easy_hard_combo_ave' 'matlab_array_generated_easy_hard_combo_ave'};
+                tmpTableTitles = {'condition' 'match_thresh_used' 'matlab_jspsych_array_easy_hard_combo_ave' 'matlab_array_generated_easy_hard_combo_ave' 'matlab_correct_thresh'};
                 tmpTable = {...
                     'easy' ...
                     t.rule_values(1) ...
                     [t.jsmatch_easy(1) t.jsmatch_easy(2) t.jsmatch_easy(3) t.jsmatch_easy(4)] ...
-                    [t.match_easy(1) t.match_easy(2) t.match_easy(3) t.match_easy(4)];...
+                    [t.match_easy(1) t.match_easy(2) t.match_easy(3) t.match_easy(4)] ...
+                    t.correct_thresh_ave(1);...
                     'hard' ...
                     t.rule_values(2) ...
                     [t.jsmatch_hard(1) t.jsmatch_hard(2) t.jsmatch_hard(3) t.jsmatch_hard(4)] ...
-                    [t.match_hard(1) t.match_hard(2) t.match_hard(3) t.match_hard(4)];...
+                    [t.match_hard(1) t.match_hard(2) t.match_hard(3) t.match_hard(4)] ...
+                    t.correct_thresh_ave(2);...
                     };
                 tmpCheckTbl = cell2table(tmpTable);
                 tmpCheckTbl.Properties.VariableNames = tmpTableTitles;
                 disp(tmpCheckTbl)
-                d.subjects(subject).rule_vals_matlab = [t.jsmatch_easy(4),t.jsmatch_hard(4)];
+                d.subjects(subject).rule_vals_matlab_orig = [t.jsmatch_easy(4),t.jsmatch_hard(4)];
+                d.subjects(subject).rule_vals_matlab_correct = t.correct_thresh_ave;
                 if ~p.print_match
                     t.prompt = 'Press enter to continue';
                     input(t.prompt,'s');
                 else
                     figure;
-                    vals = [d.subjects(subject).rule_values; d.subjects(subject).rule_vals_matlab];
+                    vals = [d.subjects(subject).rule_values; d.subjects(subject).rule_vals_matlab_correct; d.subjects(subject).rule_vals_matlab_orig];
                     bar(vals,'FaceColor',[0.0 0.502 0.502]);
-                    set(gca,'XTickLabel',{'python' 'matlab'});
+                    set(gca,'XTickLabel',{'python' 'matlab correct' 'matlab orig'});
                     ylim([0, 90]);
                     hold on
                     for i = 1:size(vals,2)
