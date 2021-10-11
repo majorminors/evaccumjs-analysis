@@ -1,6 +1,5 @@
-function [result,hline,hdata] = psychcurve(data)
+function [result,hline,hdata] = psychcurve(data,inputThreshold)
 % data [intensity trialscorrect tottrials]
-
 
 if nargin == 0 %run demo
     data =    [...
@@ -34,6 +33,9 @@ options             = struct;   % initialize as an empty struct
 
 options.sigmoidName = 'norm';   % choose a cumulative Gaussian as the sigmoid
 options.expType     = '2AFC';   % choose 2-AFC as the paradigm of the experiment
+if ~exist('inputThreshold','var')
+    options.threshPC = inputThreshold;
+end
 
 %% Now run psignifit
 % Now we are ready to run the main function, which fits the function to the
