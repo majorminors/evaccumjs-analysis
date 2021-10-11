@@ -17,14 +17,14 @@ d = struct(); % set up a structure for the data info
 % set up variables
 rootdir = pwd; %% root directory - used to inform directory mappings
 
-datadir = fullfile(rootdir,'data','behav_9_test'); % location of data
+datadir = fullfile(rootdir,'data','behav_9'); % location of data
 dataToProcess = 'processed_data'; % where is the converted data?
 saveFileName = 'lba_processed_data'; % what to save the processed data as
 
 p.plot_rt_hist = 1;
 p.plot_rts = 1;
 p.plot_pc = 1;
-p.skip_check_lbacont = 0;
+p.skip_check_lbacont = 1;
 
 p.conditions = {'EcEr','EcHr','HcEr','HcHr'}; % 2x2 coherence and rule
 p.conditioncodes = {1,2,3,4};
@@ -44,6 +44,7 @@ fprintf('converting selected participants for lba\n');
 ilba = 0; % initialise a counter
 t.lbadata = {}; % init this
 for subject = 1:length(d.subjects) % loop through subjects
+    close all
     if d.subjects(subject).lba == 'y' % if subject has been approved for lba
         
         ilba = ilba+1;
@@ -121,6 +122,7 @@ for subject = 1:length(d.subjects) % loop through subjects
             er = errorbar(xvalues,mean_rts,sem_rts);
             er.Color = [0 0 0];
             er.LineStyle = 'none';
+            ylim([400, 1000]);
             hold off
             export_fig(fullfile(figdir,strcat('LBA_',num2str(subject),'_rts.jpeg')),'-transparent')
         end
@@ -141,6 +143,7 @@ for subject = 1:length(d.subjects) % loop through subjects
             xvalues = categorical(titles);
             xvalues = reordercats(xvalues,titles);
             bar(xvalues,percent_correct,'FaceColor',[0.0 0.502 0.502]);
+            ylim([50, 100]);
             export_fig(fullfile(figdir,strcat('LBA_',num2str(subject),'_percent_correct.jpeg')),'-transparent')
         end
         

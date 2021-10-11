@@ -33,6 +33,7 @@ p.save_file = fullfile(datadir, saveFileName);
 fprintf('converting selected participants for lba\n');
 
 for subject = 1:length(d.subjects) % loop through subjects
+    close all
     
     thisSubject = d.subjects(subject);
     
@@ -100,6 +101,7 @@ for subject = 1:length(d.subjects) % loop through subjects
         x = (1:ngroups) - groupwidth/2 + (2*i-1) * groupwidth / (2*nbars);
         errorbar(x, vals(:,i), err(:,i), 'k', 'linestyle', 'none');
     end; clear x ngroups nbars groupwidth
+    ylim([400, 1000]);
     hold off
     export_fig(fullfile(figdir,strcat(num2str(subject),'_mean_comparison.jpeg')),'-transparent')
 
@@ -110,6 +112,7 @@ for subject = 1:length(d.subjects) % loop through subjects
     vals = [pc(:,1)';pc(:,2)';pc(:,3)';pc(:,4)'];
     bar(vals,'FaceColor',[0.0 0.502 0.502]);
     set(gca,'XTickLabel',titles);
+    ylim([50, 100]);
     hold off
     export_fig(fullfile(figdir,strcat(num2str(subject),'_pc_comparison.jpeg')),'-transparent')
     
