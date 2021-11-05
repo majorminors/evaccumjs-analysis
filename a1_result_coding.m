@@ -17,7 +17,7 @@ t = struct(); % set up a structure for temp data
 % set up variables
 rootdir = pwd; %% root directory - used to inform directory mappings
 
-datadir = fullfile(rootdir,'data','behav_9'); % location of data
+datadir = fullfile(rootdir,'data','behav_10_unscaled_thresh'); % location of data
 dataToProcess = 'converted_data'; % where is the converted data?
 saveFileName = 'processed_data'; % what to save the processed data as
 
@@ -309,6 +309,7 @@ for subject = 1:length(t.alldata) % loop through each subject
     %     d.subjects(subject).easy_dots_rule_value = t.easy_dots_rule_value;
     d.subjects(subject).coherence_values = t.coherence_values;
     d.subjects(subject).updated_coherence_values = t.updated_coherence_values;
+    d.subjects(subject).button_condition = t.button_condition;
         
 %     disp('*coherence thresholding one*')
 %     disp('accuracy (low coh/hard threshold is .9, high coh/easy threshold is .7)')
@@ -398,10 +399,13 @@ for subject = 1:length(t.alldata) % loop through each subject
             [t.coh_easy,t.coh_hard,~,t.psignifit_array] = coh_thresholding(d.subjects(subject).coh,figdir,'_1',subject,1);
             if p.check_coh
                 [t.jscoh_easy,t.jscoh_hard,~,t.jscoh_psignifit_array] = coh_thresholding(t.coh.data_array,figdir,'_thresholding_with_jsarray_1',subject,0,1);
-                tmp = psychcurve(t.coh.data_array,0.9);
-                t.correct_thresh_easy = tmp.Fit(1);
-                tmp = psychcurve(t.coh.data_array,0.7);
-                t.correct_thresh_hard = tmp.Fit(1); clear tmp;
+                close all
+                tmp1 = psychcurve(t.coh.data_array,0.9);
+                t.correct_thresh_easy = tmp1.Fit(1);
+                tmp2 = psychcurve(t.coh.data_array,0.7);
+                t.correct_thresh_hard = tmp2.Fit(1);
+                betterThresholdPlotting(tmp1, tmp2); clear tmp1 tmp2
+                export_fig(fullfile(figdir,strcat(num2str(subject),'_better_coh_1_sigmoid.jpeg')),'-transparent')
                 % put together a table for quick checking
                 disp('check coherence threshold values')
                 tmpTableTitles = {'condition' 'coh_thresh_used' 'coh_thresh_matlab_jspsych_array_used' 'correctly_obtained_threshold' 'coh_thresh_matlab_array_generated' 'difference_with_same_array' 'difference_from_correct_threshold'};
@@ -466,10 +470,14 @@ for subject = 1:length(t.alldata) % loop through each subject
                 tmp(:,:,1) = t.rule.data_array_easy;
                 tmp(:,:,2) = t.rule.data_array_hard;
                 [t.jsmatch_easy,t.jsmatch_hard,t.jsmatch_summary,t.jsmatch_psignifit_array] = match_thresholding(tmp,figdir,p.save_file,subject,0,1); clear tmp;
-                tmp2 = psychcurve(t.rule.data_array_easy,0.6);
-                t.correct_thresh_easy_dots = -tmp2.Fit(1);
+                tmp1 = psychcurve(t.rule.data_array_easy,0.6);
+                t.correct_thresh_easy_dots = -tmp1.Fit(1);
                 tmp2 = psychcurve(t.rule.data_array_hard,0.6);
-                t.correct_thresh_hard_dots = -tmp2.Fit(1); clear tmp;
+                t.correct_thresh_hard_dots = -tmp2.Fit(1);
+                close all
+                betterThresholdPlottingMatch(tmp1,tmp2);
+                export_fig(fullfile(figdir,strcat(num2str(subject),'_better_match_sigmoid.jpeg')),'-transparent')
+                clear tmp1 tmp2;
                 t.correct_thresh_ave(2) = (t.correct_thresh_easy_dots+t.correct_thresh_hard_dots)/2;
                 t.correct_thresh_ave(1) = 90-t.correct_thresh_ave(2);
                 % put together a table for quick checking
@@ -530,10 +538,13 @@ for subject = 1:length(t.alldata) % loop through each subject
             [t.coh_easy,t.coh_hard,~,t.psignifit_array] = coh_thresholding(d.subjects(subject).coh_ang,figdir,'_2',subject,1);
             if p.check_coh_ang
                 [t.jscoh_easy,t.jscoh_hard,~,t.jscoh_psignifit_array] = coh_thresholding(t.coh_ang.data_array,figdir,'_thresholding_with_jsarray_2',subject,0,1);
-                tmp = psychcurve(t.coh_ang.data_array,0.9);
-                t.correct_thresh_easy = tmp.Fit(1);
-                tmp = psychcurve(t.coh_ang.data_array,0.7);
-                t.correct_thresh_hard = tmp.Fit(1); clear tmp;
+                close all
+                tmp1 = psychcurve(t.coh_ang.data_array,0.9);
+                t.correct_thresh_easy = tmp1.Fit(1);
+                tmp2 = psychcurve(t.coh_ang.data_array,0.7);
+                t.correct_thresh_hard = tmp2.Fit(1);
+                betterThresholdPlotting(tmp1, tmp2); clear tmp1 tmp2
+                export_fig(fullfile(figdir,strcat(num2str(subject),'_better_coh_2_sigmoid.jpeg')),'-transparent')
                 % put together a table for quick checking
                 disp('check updated threshold values')
                 tmpTableTitles = {'condition' 'coh_thresh_used' 'coh_thresh_matlab_jspsych_array_used' 'correctly_obtained_threshold' 'coh_thresh_matlab_array_generated' 'difference_with_same_array' 'difference_from_correct_threshold'};
