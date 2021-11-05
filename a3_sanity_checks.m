@@ -38,13 +38,16 @@ for subject = 1:length(d.subjects) % loop through subjects
     thisSubject = d.subjects(subject);
     
     numTrials = numel(thisSubject.exp.rt);
+    cue_rts = nan(numTrials,4);cue_corr = nan(numTrials,4); % init these, one col of trials for each cue
     ecer=[];echr=[];hcer=[];hchr=[];
     for trial = 1:numTrials
         
+        % pull these out
         thisStimArray = thisSubject.exp.stim_array{trial};
         thisRT = thisSubject.exp.rt(trial);
         thisCorrect = thisSubject.exp.correct(trial);
         
+        % get the different values for each condition
         if thisStimArray.coh_difficulty == 1 && thisStimArray.match_difficulty == 1
             ecer = [ecer,[thisRT;thisCorrect]];
         elseif thisStimArray.coh_difficulty == 1 && thisStimArray.match_difficulty == 2
@@ -55,9 +58,24 @@ for subject = 1:length(d.subjects) % loop through subjects
             hchr = [hchr,[thisRT;thisCorrect]];
         end
         
+        % lets check out the simon effect: pull rt and correct for each cue
+        cue_rts(trial,thisSubject.exp.stim_array{trial}.cue_dir) = thisRT;
+        cue_corr(trial,thisSubject.exp.stim_array{trial}.cue_dir) = thisCorrect;
+        
+        
     end
     
+    % summarise this information for each cue
+    cue_rts = mean(cue_rts,'omitnan');
+    for i = 1:size(cue_corr,2)
+        tmp(i) = (sum(cue_corr(:,i),'omitnan')/length(cue_corr(~isnan(cue_corr(:,i)),i)))*100;
+    end
+    cue_corr = tmp; clear tmp;
+    
     %% check some stoof
+    summary(subject).button_cond = thisSubject.button_condition{2};
+    summary(subject).cue_rts = cue_rts;
+    summary(subject).cue_corr = cue_corr;
     summary(subject).ecer_num_trials = size(ecer,2);
     summary(subject).ecer_res = ecer;
     summary(subject).ecer_meanrt = mean(ecer(1,:),'omitnan');
@@ -75,6 +93,15 @@ for subject = 1:length(d.subjects) % loop through subjects
     summary(subject).hchr_meanrt = mean(hchr(1,:),'omitnan');
     summary(subject).hchr_pc = accthis(hchr(2,:));
     
+    % lets look at cues
+    figure
+    yyaxis left
+    bar(cue_rts,'FaceColor',[0.0 0.502 0.502]);
+    ylim([min(cue_rts)-50,max(cue_rts)+50])
+    yyaxis right
+    plot(cue_corr,'o');
+    ylim([min(cue_corr)-5,max(cue_corr)+5])
+    set(gca,'XTickLabel',{'cue 1','cue 2','cue 3','cue 4'});
     
     %% let's look at first half vs second half
     titles = {'EcEr','EcHr','HcEr','HcHr'};
@@ -101,7 +128,7 @@ for subject = 1:length(d.subjects) % loop through subjects
         x = (1:ngroups) - groupwidth/2 + (2*i-1) * groupwidth / (2*nbars);
         errorbar(x, vals(:,i), err(:,i), 'k', 'linestyle', 'none');
     end; clear x ngroups nbars groupwidth
-    ylim([400, 1000]);
+    ylim([min(rts(1,find(rts(1,:)>0))), max(rts(1,find(rts(1,:)>0)))]);
     hold off
     export_fig(fullfile(figdir,strcat(num2str(subject),'_mean_comparison.jpeg')),'-transparent')
 
@@ -128,6 +155,37 @@ all.hcerRT = mean(cell2mat({summary(:).hcer_meanrt}));
 all.hcerPC = mean(cell2mat({summary(:).hcer_pc}));
 all.hchrRT = mean(cell2mat({summary(:).hchr_meanrt}));
 all.hchrPC = mean(cell2mat({summary(:).hchr_pc}));
+
+for i = 1:numel(summary)
+    if summary(i).button_cond == 1
+    tmprts1(i,:) = summary(i).cue_rts;
+    tmpcorr1(i,:) = summary(i).cue_corr;
+    tmprts2(i,:) = NaN;
+    tmpcorr2(i,:) = NaN;
+    elseif summary(i).button_cond == 2
+    tmprts1(i,:) = NaN;
+    tmpcorr1(i,:) = NaN;
+    tmprts2(i,:) = summary(i).cue_rts;
+    tmpcorr2(i,:) = summary(i).cue_corr;
+    end
+end
+
+all.cue_rts = [mean(tmprts1,'omitnan')',mean(tmprts2,'omitnan')'];
+all.cue_corr = [mean(tmpcorr1,'omitnan')',mean(tmpcorr2,'omitnan')'];
+    % lets look at cues
+    figure
+    titles = {'cue 1','cue 2','cue 3','cue 4'};
+    yyaxis left
+    b=bar(1:numel(titles),all.cue_rts);
+    b(1).FaceColor = [.2 .6 .5];
+    b(2).FaceColor = [.6 .2 .5];
+    ylim([min(min(all.cue_rts))-20,max(max(all.cue_rts))+20])
+    yyaxis right
+    p=plot(1:numel(titles),all.cue_corr,'o');
+    p(1).MarkerFaceColor = 'g';
+    p(2).MarkerFaceColor = 'm';
+    ylim([min(min(all.cue_corr))-5,max(max(all.cue_corr))+5])
+    set(gca,'XTickLabel',titles);
 
 % put together a table for quick checking
 disp('check summary stats')
@@ -177,8 +235,12 @@ function [firstHalf, firstHalfSem, secondHalf, secondHalfSem] = meancomparison(d
 % returns mean values for first and second half of vals
 
 % split data in half
-firstHalf = data(:,1:round(size(data,2)/2));
-secondHalf = data(:,round(size(data,2)/2):end);
+% firstHalf = data(:,1:round(size(data,2)/2));
+% secondHalf = data(:,round(size(data,2)/2):end);
+
+% specify trials
+firstHalf = data(:,1:64);
+secondHalf = data(:,end-64:end);
 
 % reduce to correct values
 firstHalf = firstHalf(1,firstHalf(1,:) & firstHalf(2,:));
@@ -197,8 +259,12 @@ end
 function [firstHalf, secondHalf] = acccomparison(data)
 
 % split data in half
-firstHalf = data(:,1:round(size(data,2)/2));
-secondHalf = data(:,round(size(data,2)/2):end);
+% firstHalf = data(:,1:round(size(data,2)/2));
+% secondHalf = data(:,round(size(data,2)/2):end);
+
+% specify trials
+firstHalf = data(:,1:64);
+secondHalf = data(:,end-64:end);
 
 firstHalf = (sum(firstHalf(2,:))/length(firstHalf(2,:)))*100;
 secondHalf = (sum(secondHalf(2,:))/length(secondHalf(2,:)))*100;
