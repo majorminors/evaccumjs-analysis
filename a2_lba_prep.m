@@ -17,7 +17,9 @@ d = struct(); % set up a structure for the data info
 % set up variables
 rootdir = pwd; %% root directory - used to inform directory mappings
 
-datadir = fullfile(rootdir,'data','behav_9'); % location of data
+%datadir = fullfile(rootdir,'data','behav_10_unscaled_thresh'); % location of data
+datadir = fullfile(rootdir,'data','behav_9_simulation_boundary'); % location of data
+
 dataToProcess = 'processed_data'; % where is the converted data?
 saveFileName = 'lba_processed_data'; % what to save the processed data as
 
@@ -28,6 +30,10 @@ p.skip_check_lbacont = 1;
 
 p.conditions = {'EcEr','EcHr','HcEr','HcHr'}; % 2x2 coherence and rule
 p.conditioncodes = {1,2,3,4};
+p.histXlim = [0,1500];
+p.histYlim = [0, 40];
+p.pcYlim = [50, 100];
+p.rtYlim = [1000,1500];%[400, 1000];
 
 % cobble together what we need to play with the data and save it
 theData = load(fullfile(datadir,dataToProcess)); % load the data
@@ -95,7 +101,7 @@ for subject = 1:length(d.subjects) % loop through subjects
                 h = histogram(all_rts(the_rts),'FaceColor',[0.0 0.502 0.502]);
                 title(titles{condition});
                 h.NumBins = 40;
-                xlim([0,1500]);
+                xlim(p.histXlim);
                 ylim([0, 40]);
             end; clear condition all_conditions all_accuracies all_rts condition_idx the_rts
             export_fig(fullfile(figdir,strcat('LBA_',num2str(subject),'_rt_hist.jpeg')),'-transparent')
@@ -122,7 +128,7 @@ for subject = 1:length(d.subjects) % loop through subjects
             er = errorbar(xvalues,mean_rts,sem_rts);
             er.Color = [0 0 0];
             er.LineStyle = 'none';
-            ylim([400, 1000]);
+            ylim(p.rtYlim);
             hold off
             export_fig(fullfile(figdir,strcat('LBA_',num2str(subject),'_rts.jpeg')),'-transparent')
         end
@@ -143,7 +149,7 @@ for subject = 1:length(d.subjects) % loop through subjects
             xvalues = categorical(titles);
             xvalues = reordercats(xvalues,titles);
             bar(xvalues,percent_correct,'FaceColor',[0.0 0.502 0.502]);
-            ylim([50, 100]);
+            ylim(p.pcYlim);
             export_fig(fullfile(figdir,strcat('LBA_',num2str(subject),'_percent_correct.jpeg')),'-transparent')
         end
         
@@ -158,7 +164,7 @@ for subject = 1:length(d.subjects) % loop through subjects
             close all
         end
         
-        if t.cont_lba
+        if strcmp(t.cont_lba,'y')
             % stack it up
             d.subjects(subject).lba = t.consolidata;
             d.lbadata{ilba} = t.consolidata;
@@ -169,6 +175,15 @@ for subject = 1:length(d.subjects) % loop through subjects
     end % end lba approved if statement
     
 end; clear subject ilba; % end subject loop for lba
+
+% get rid of non-lba participants
+i = length(d.lbadata);
+while i
+    if isempty(d.lbadata{i})
+        d.lbadata(i) = [];
+    end
+    i = i-1;
+end
 
 fprintf('saving lba adjusted output from %s\n', mfilename);
 save(p.save_file,'d'); % save all data to a .mat file
