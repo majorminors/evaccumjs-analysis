@@ -21,7 +21,7 @@ p.file_control = ones(1,27); % for each file, 1 = one participant, 0 = multiple,
 % set up variables
 rootdir = pwd; %% root directory - used to inform directory mappings
 
-datadir = fullfile(rootdir,'data','behav_9'); % location of data
+datadir = fullfile(rootdir,'data','behav_11'); % location of data
 
 saveFileName = 'converted_data'; % what to save the converted data as
 

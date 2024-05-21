@@ -18,7 +18,7 @@ d = struct(); % set up a structure for the data info
 rootdir = pwd; %% root directory - used to inform directory mappings
 
 %datadir = fullfile(rootdir,'data','behav_10_unscaled_thresh'); % location of data
-datadir = fullfile(rootdir,'data','behav_9_simulation_boundary'); % location of data
+datadir = fullfile(rootdir,'data','behav_9_simulation_accumulation'); % location of data
 
 dataToProcess = 'processed_data'; % where is the converted data?
 saveFileName = 'lba_processed_data'; % what to save the processed data as
@@ -30,10 +30,11 @@ p.skip_check_lbacont = 1;
 
 p.conditions = {'EcEr','EcHr','HcEr','HcHr'}; % 2x2 coherence and rule
 p.conditioncodes = {1,2,3,4};
-p.histXlim = [0,1500];
-p.histYlim = [0, 40];
+p.histBins = 40; % 40 for real data
+p.histXlim = [1200,1500]; % 0-1500 for real data
+p.histYlim = [0, 70]; % 0-40 for real data
 p.pcYlim = [50, 100];
-p.rtYlim = [1000,1500];%[400, 1000];
+p.rtYlim = [1000,1500];%[400, 1000]; for real data
 
 % cobble together what we need to play with the data and save it
 theData = load(fullfile(datadir,dataToProcess)); % load the data
@@ -88,8 +89,7 @@ for subject = 1:length(d.subjects) % loop through subjects
         
         if p.plot_rt_hist
             % get some rt histograms
-            disp('1 = EcEr, 2 = EcHr, 3 = HcEr, 4 = HcHr')
-            titles = {'EcEr','EcHr','HcEr','HcHr'};
+            titles = p.conditions;
             all_conditions = cell2mat(t.consolidata(:,2));
             all_accuracies = cell2mat(t.consolidata(:,5));
             all_rts = cell2mat(t.consolidata(:,4));
@@ -100,17 +100,16 @@ for subject = 1:length(d.subjects) % loop through subjects
                 subplot(2,2,condition)
                 h = histogram(all_rts(the_rts),'FaceColor',[0.0 0.502 0.502]);
                 title(titles{condition});
-                h.NumBins = 40;
+                h.NumBins = p.histBins;
                 xlim(p.histXlim);
-                ylim([0, 40]);
+                ylim(p.histYlim);
             end; clear condition all_conditions all_accuracies all_rts condition_idx the_rts
             export_fig(fullfile(figdir,strcat('LBA_',num2str(subject),'_rt_hist.jpeg')),'-transparent')
         end
         
         if p.plot_rts
             % get some rt bars
-            disp('1 = EcEr, 2 = EcHr, 3 = HcEr, 4 = HcHr')
-            titles = {'EcEr','EcHr','HcEr','HcHr'};
+            titles = p.conditions;
             all_conditions = cell2mat(t.consolidata(:,2));
             all_accuracies = cell2mat(t.consolidata(:,5));
             all_rts = cell2mat(t.consolidata(:,4));
@@ -135,8 +134,7 @@ for subject = 1:length(d.subjects) % loop through subjects
         
         if p.plot_pc
             % get some accuracy bars
-            disp('1 = EcEr, 2 = EcHr, 3 = HcEr, 4 = HcHr')
-            titles = {'EcEr','EcHr','HcEr','HcHr'};
+            titles = p.conditions;
             all_conditions = cell2mat(t.consolidata(:,2));
             all_accuracies = cell2mat(t.consolidata(:,5));
             figure;

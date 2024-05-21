@@ -23,11 +23,11 @@ t = struct(); % set up a structure for temp data
 rootdir = pwd; %% root directory - used to inform directory mappings
 
 toolsdir = fullfile(rootdir, 'lib');
-datadir = fullfile(rootdir,'data','behav_9_simulation_accumulation'); % location of data
+datadir = fullfile(rootdir,'data','behav_9_simulation_boundary'); % location of data
 dataToProcess = 'converted_data'; % where is the converted data?
 saveFileName = 'processed_data'; % what to save the processed data as
 
-t.pathToSimRTs = fullfile(toolsdir,'simulations','simulateRt','AccrateRT.csv'); % 'AccrateRT.csv' or 'BoundaryRT.csv'
+t.pathToSimRTs = fullfile(toolsdir,'simulations','simulateRt','BoundaryRT.csv'); % 'AccrateRT.csv' or 'BoundaryRT.csv'
 
 
 p.do_checks = 0;
@@ -86,7 +86,7 @@ if ~exist(figdir,'dir')
 end
 p.save_file = fullfile(datadir, saveFileName);
 
-for subject = 1:5%length(t.alldata) % loop through each subject
+for subject = 1:length(t.alldata) % loop through each subject
     fprintf(1, 'working with subject %1.0f of %1.0f\n', subject, length(t.alldata)); % print that so you can check
     close all
     

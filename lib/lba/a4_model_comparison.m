@@ -12,10 +12,12 @@ t = struct(); % set up a structure for temp data
 % set up variables
 rootdir = '/group/woolgar-lab/projects/Dorian/evaccum/evaccumjs-analysis'; %'C:\Users\doria\Nextcloud\desiderata\desiderata\04 Research\05 Evidence Accumulation\01 EvAccum Code'; %
 
-datadir = fullfile(rootdir,'data','behav_9_100optim_splitConds');
-modelIdentifier = 'easyRule';
+%datadir = fullfile(rootdir,'data','behav_10_unscaled_thresh'); % location of data
+datadir = fullfile(rootdir,'data','behav_9_simulation_accumulation'); % location of data
+
+modelIdentifier = 'easyCoh'; % allConds easyCoh hardCoh easyRule hardRule
 modelNamePattern = ['Model_%s' '_' modelIdentifier '.mat'];
-num_subjects = 17;
+num_subjects = 27;
 
 modeldir = fullfile(datadir,'lba_results'); % expects to find your modelling results here
 figDir = fullfile(modeldir,['figures' '_' modelIdentifier]); % will output figures here
@@ -38,15 +40,15 @@ design_space={[1,3],[1,4],[1,3,4],[1,3,4,5],[1,2],[1,2,3],[1,2,4],[1,2,3,4],[1,2
 mod_num = 2;
 Model_Feature = design_space{mod_num};
 
-% dont use this flabs = fullfile(rootdir,'Model_%s.mat');
 %%
 BIC_all =[];
 for m = 1:length(design_space)%
     try
-    thisModel =  sprintf(modelNamePattern,num2str(m)); 
-    thisModel = fullfile(modeldir,thisModel);    
-    load(thisModel);
+        thisModel =  sprintf(modelNamePattern,num2str(m));
+        thisModel = fullfile(modeldir,thisModel);
+        load(thisModel);
     catch
+        warning('expected model %s, but failed to load',thisModel);
         continue
     end
 

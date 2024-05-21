@@ -28,10 +28,10 @@ t = struct(); % for temp vars
 rootdir = '/group/woolgar-lab/projects/Dorian/evaccum/evaccumjs-analysis'; %'C:\Users\doria\Nextcloud\desiderata\desiderata\04 Research\05 Evidence Accumulation\01 EvAccum Code';%'\\cbsu\data\Group\Woolgar-Lab\projects\Dorian\EvAccum'; % root directory - used to inform directory mappings
 
 % only required if not testing
-datadir = fullfile(rootdir,'data','behav_9_100optim_splitConds');
+datadir = fullfile(rootdir,'data','behav_9_simulation_boundary'); % location of data
 lbadatadir = datadir; % expects to find your data here and will save results in a sub-folder here
-p.data_name = 'processed_data.mat'; % data file names
-jobdir = fullfile(lbadatadir,'scheduled_jobs_easyrule'); % where you'll save any scheduled jobs (i.e. running on the scheduler)
+p.data_name = 'lba_processed_data.mat'; % data file names
+jobdir = fullfile(rootdir,'job_logging','boundary-10-allvariations'); % where you'll save any scheduled jobs (i.e. running on the scheduler)
 toolsdir = fullfile(rootdir, 'lib','lba'); % where are all your scripts/tools?
 
 p.save_name = 'Model_%s.mat';
@@ -46,17 +46,19 @@ t.test_data_name = 'lba_test_data.mat'; % name of your test data - expects this 
 % these are all the model variants we want to test - different combinations of free parameters
 p.design_space={[1,3],[1,4],[1,3,4],[1,3,4,5],[1,2],[1,2,3],[1,2,4],[1,2,3,4],[1,2,3,4,5],[1,5],[1,3,5],[1,4,5],[1,2,5],[1,2,3,5],[1,2,4,5]};
 settings.randiter  = 100; % random search iters before optimization
-settings.nosession = 100; % optimization iterations - more equals less chance of ending up in a local minimum
+settings.nosession = 10; % optimization iterations - more equals less chance of ending up in a local minimum
 settings.overwrite = 1;
     %         EcEr = 1 = easy coherence, easy matching
     %         EcHr = 2 = easy coherence, hard matching
     %         HcEr = 3 = hard coherence, easy matching
     %         HcHr = 4 = hard coherence, hard matching
-%     settings.fitVariations = {'fiterror_cell_RDK',[1:4],'allConds';...
-%         settings.fitVariations = {'fiterror_cell_EASYCOH',[1,2],'easyCoh'};%...
-%         settings.fitVariations = {'fiterror_cell_HARDCOH',[3,4],'hardCoh'};%...
-        settings.fitVariations = {'fiterror_cell_EASYRULE',[1,3],'easyRule'};%...
-%         settings.fitVariations = {'fiterror_cell_HARDRULE',[2,4],'hardRule'};%};
+    settings.fitVariations = {
+        'fiterror_cell_RDK',[1:4],'allConds';...
+        'fiterror_cell_EASYCOH',[1,2],'easyCoh';...
+        'fiterror_cell_HARDCOH',[3,4],'hardCoh';...
+        'fiterror_cell_EASYRULE',[1,3],'easyRule';...
+        'fiterror_cell_HARDRULE',[2,4],'hardRule';...
+        };
 
 % directory mappings
 if ~p.testing
@@ -119,7 +121,7 @@ fprintf('creating jobs %s\n', mfilename);
 J = [];
 ind = 0;
 
-for imod = 3%1:length(p.design_space) % for the number of combinations of free parameters you specified earlier (model variants)
+for imod = 1:length(p.design_space) % for the number of combinations of free parameters you specified earlier (model variants)
     p.numfile = num2str(imod);
     t.model_file_name = sprintf(p.save_name,p.numfile);
     settings.savename = fullfile(p.save_path,t.model_file_name);

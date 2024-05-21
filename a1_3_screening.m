@@ -17,29 +17,23 @@ t = struct(); % set up a structure for temp data
 % set up variables
 rootdir = pwd; %% root directory - used to inform directory mappings
 
-datadir = fullfile(rootdir,'data','behav_11'); % location of data
+datadir = fullfile(rootdir,'data','behav_9'); % location of data
 dataToProcess = 'converted_data'; % where is the converted data?
 saveFileName = 'processed_data'; % what to save the processed data as
 
-p.plot_norms = 0;
-p.skip_check_pp = 1;
+
 p.plot_coh = 1;
 p.check_coh = 1;
-p.print_coh = 1; % will print values from the coherence thresholding rather than asking you to look online
+p.print_coh = 0; % will print values from the coherence thresholding rather than asking you to look online
 p.plot_match = 1;
 p.check_match = 1;
-p.print_match = 1; % will print values from the coherence thresholding rather than asking you to look online
-p.plot_coh_ang = 1;
-p.check_coh_ang = 1;
-p.print_coh_ang = 1; % will print values from the coherence thresholding rather than asking you to look online
+p.print_match = 0; % will print values from the coherence thresholding rather than asking you to look online
 p.skip_check_lba = 0;
 
 % some quick checks
 if p.check_coh == 1 && p.plot_coh == 0; error('you have to plot coherence to check coherence'); end
-if p.check_coh_ang == 1 && p.plot_coh_ang == 0; error('you have to plot coherence thresholding 2 to check it'); end
 if p.check_match == 1 && p.plot_match == 0; error('you have to plot matching to check matching'); end
 if p.check_coh == 0 && p.print_coh == 1; error('you have to check coherence to print it'); end
-if p.check_coh_ang == 0 && p.print_coh_ang == 1; error('you have to check coherence 2 to print it'); end
 if p.check_match == 0 && p.print_match == 1; error('you have to check matching to print it'); end
 
 % cobble together what we need to play with the data and save it
@@ -139,7 +133,6 @@ for subject = 1:length(t.alldata) % loop through each subject
     
     t.coh_count = 0;
     t.rule_count = 0;
-    t.coh_ang_count = 0;
     t.exp_count = 0;
     for trial = 1:length(t.this_subj_trials)
         clear t.current_trial;
@@ -173,38 +166,6 @@ for subject = 1:length(t.alldata) % loop through each subject
             for i = 1:length(t.stim_array)
                 t.rule.stim_array = [t.rule.stim_array,t.stim_array{i}];
             end; clear i;
-        elseif isfield(t.current_trial, 'coherence_angle_array')
-            t.stim_array = t.current_trial.coherence_angle_array;
-            t.coh_ang.stim_array = [];
-            for i = 1:length(t.stim_array)
-                t.coh_ang.stim_array = [t.coh_ang.stim_array,t.stim_array{i}];
-            end; clear i;
-        elseif  isfield(t.current_trial, 'exp_stim_array')
-            t.stim_array = t.current_trial.exp_stim_array;
-            t.exp.stim_array = [];
-            for i = 1:length(t.stim_array)
-                t.exp.stim_array = [t.exp.stim_array,t.stim_array{i}];
-            end; clear i;
-            % so now we need to do something to sort out the erroneous match
-            % difficulty sorting
-            for i = 1:length(t.exp.stim_array)
-                t.match_distances(i) = t.exp.stim_array{1,i}.match_dist_cue_dir;
-            end
-            t.match_distances_rounded = unique(round(t.match_distances,1));
-            if length(t.match_distances_rounded) ~= length(unique(t.match_distances))
-                warning('javascript has spawned multiple match distances - your matching difficulty coding will be wrong, because it was coded using min/max. recoding now')
-                disp('unique match distances:')
-                disp(unique(t.match_distances))
-                disp('rounded match distances:')
-                disp(t.match_distances_rounded)
-                for i = 1:length(t.exp.stim_array)
-                    if round( t.exp.stim_array{1,i}.match_dist_cue_dir,1) == min(t.match_distances_rounded) || round( t.exp.stim_array{1,i}.match_dist_cue_dir,1) == max(t.match_distances_rounded)
-                        t.exp.stim_array{1,i}.match_difficulty = 1;
-                    else
-                        t.exp.stim_array{1,i}.match_difficulty = 2;
-                    end
-                end
-            end
         end % end stimulus array sorter
         
         
@@ -222,10 +183,7 @@ for subject = 1:length(t.alldata) % loop through each subject
         if isfield(t.current_trial, 'coherence_values')
             t.coherence_values = t.current_trial.coherence_values;
         end
-        if isfield(t.current_trial, 'updated_coherence_values')
-            t.updated_coherence_values = t.current_trial.updated_coherence_values;
-        end
-        
+
         
         
         % only deal with trials that are labelled with experiment part
@@ -263,35 +221,7 @@ for subject = 1:length(t.alldata) % loop through each subject
                 end
                 t.rule.correct(t.rule_count) = t.current_trial.correct;
                 t.rule.direction(t.rule_count) = t.current_trial.coherent_direction;
-                
-            elseif strcmp(t.current_trial.experiment_part, 'cohtest_angle_rdk')
-                % just get the rdk trials for coherence test trials
-                t.coh_ang_count = t.coh_ang_count+1;
-                
-                t.coh_ang.rt(t.coh_ang_count) = t.current_trial.rt;
-                if isempty(find(t.current_trial.key_press == t.keycode))
-                    t.coh_ang.button(t.coh_ang_count) = -1;
-                else
-                    t.coh_ang.button(t.coh_ang_count) = find(t.current_trial.key_press == t.keycode);
-                end
-                t.coh_ang.correct(t.coh_ang_count) = t.current_trial.correct;
-                t.coh_ang.direction(t.coh_ang_count) = t.current_trial.coherent_direction;
-                
-            elseif strcmp(t.current_trial.experiment_part, 'experiment_rdk')
-                % just get the rdk trials for experimental trials
-                t.exp_count = t.exp_count+1;
-                
-                t.exp.rt(t.exp_count) = t.current_trial.rt;
-                if isempty(find(t.current_trial.key_press == t.keycode))
-                    t.exp.button(t.exp_count) = -1;
-                else
-                    t.exp.button(t.exp_count) = find(t.current_trial.key_press == t.keycode);
-                end
-                t.exp.correct(t.exp_count) = t.current_trial.correct;
-                t.exp.direction(t.exp_count) = t.current_trial.coherent_direction;
-                
-            end % end rdk trial filtering
-            
+            end   
         end % end experiment part filtering
         
     end % end trial loop
@@ -302,64 +232,11 @@ for subject = 1:length(t.alldata) % loop through each subject
     d.subjects(subject).id = t.id;
     d.subjects(subject).coh = t.coh;
     d.subjects(subject).rule = t.rule;
-    d.subjects(subject).coh_ang = t.coh_ang;
-    d.subjects(subject).exp = t.exp;
     d.subjects(subject).rule_values = t.rule_values;
     %     d.subjects(subject).hard_dots_rule_value = t.hard_dots_rule_value;
     %     d.subjects(subject).easy_dots_rule_value = t.easy_dots_rule_value;
     d.subjects(subject).coherence_values = t.coherence_values;
-    d.subjects(subject).updated_coherence_values = t.updated_coherence_values;
     d.subjects(subject).button_condition = t.button_condition;
-        
-%     disp('*coherence thresholding one*')
-%     disp('accuracy (low coh/hard threshold is .9, high coh/easy threshold is .7)')
-%     disp(accthis(d.subjects(subject).coh.correct))
-%     disp('% invalid')
-%     disp((length(find(d.subjects(subject).coh.rt == -1))/length(d.subjects(subject).coh.rt)))
-%     disp('% fast responses')
-%     disp((length(find(d.subjects(subject).coh.rt >=0 & d.subjects(subject).coh.rt < 400))/length(d.subjects(subject).coh.rt)))
-    if p.plot_norms
-        figure; normplot(d.subjects(subject).coh.rt)
-        title('coherence thresholding')
-        export_fig(fullfile(figdir,strcat(num2str(subject),'_coh_normplot.jpeg')),'-transparent')
-    end
-%     disp('*rule*')
-%     disp('accuracy (hard threshold is .6)')
-%     disp(accthis(d.subjects(subject).rule.correct))
-%     disp('% invalid')
-%     disp((length(find(d.subjects(subject).rule.rt == -1))/length(d.subjects(subject).rule.rt)))
-%     disp('% fast responses')
-%     disp((length(find(d.subjects(subject).rule.rt >=0 & d.subjects(subject).rule.rt < 400))/length(d.subjects(subject).rule.rt)))
-    if p.plot_norms
-        figure; normplot(d.subjects(subject).rule.rt)
-        title('match thresholding')
-        export_fig(fullfile(figdir,strcat(num2str(subject),'_match_normplot.jpeg')),'-transparent')
-    end
-    
-%     disp('*coherence second thresholding*')
-%     disp('accuracy (low coh/hard threshold is .9, high coh/easy threshold is .7)')
-%     disp(accthis(d.subjects(subject).coh_ang.correct))
-%     disp('% invalid')
-%     disp((length(find(d.subjects(subject).coh_ang.rt == -1))/length(d.subjects(subject).coh_ang.rt)))
-%     disp('% fast responses')
-%     disp((length(find(d.subjects(subject).coh_ang.rt >=0 & d.subjects(subject).coh_ang.rt < 400))/length(d.subjects(subject).coh_ang.rt)))
-    if p.plot_norms
-        figure; normplot(d.subjects(subject).coh_ang.rt)
-        title('coherence second thresholding')
-        export_fig(fullfile(figdir,strcat(num2str(subject),'_coh_ang_normplot.jpeg')),'-transparent')
-    end
-%     disp('*experiment*')
-%     disp('accuracy (.6 is a floor effect)')
-%     disp(accthis(d.subjects(subject).exp.correct))
-%     disp('$ invalid')
-%     disp((length(find(d.subjects(subject).exp.rt == -1))/length(d.subjects(subject).exp.rt)))
-%     disp('% fast responses')
-%     disp((length(find(d.subjects(subject).exp.rt >=0 & d.subjects(subject).exp.rt < 400))/length(d.subjects(subject).exp.rt)))
-    if p.plot_norms
-        figure; normplot(d.subjects(subject).exp.rt)
-        title('experiment')
-        export_fig(fullfile(figdir,strcat(num2str(subject),'_exp_normplot.jpeg')),'-transparent')
-    end
     
     % put together a table for quick checking
     tmpTableTitles = {'exp_part' 'accuracy' 'percent_invalid' 'percent_fast'};
@@ -372,28 +249,11 @@ for subject = 1:length(t.alldata) % loop through each subject
         accthis(d.subjects(subject).rule.correct) ...
         (length(find(d.subjects(subject).rule.rt == -1))/length(d.subjects(subject).rule.rt))*100 ...
         (length(find(d.subjects(subject).rule.rt >=0 & d.subjects(subject).rule.rt < 400))/length(d.subjects(subject).rule.rt))*100;...
-        'coh thresh 2 (70-90)' ...
-        accthis(d.subjects(subject).coh_ang.correct) ...
-        (length(find(d.subjects(subject).coh_ang.rt == -1))/length(d.subjects(subject).coh_ang.rt))*100 ...
-        (length(find(d.subjects(subject).coh_ang.rt >=0 & d.subjects(subject).coh_ang.rt < 400))/length(d.subjects(subject).coh_ang.rt))*100;...
-        'experiment (>60)' ...
-        accthis(d.subjects(subject).exp.correct) ...
-        (length(find(d.subjects(subject).exp.rt == -1))/length(d.subjects(subject).exp.rt))*100 ...
-        (length(find(d.subjects(subject).exp.rt >=0 & d.subjects(subject).exp.rt < 400))/length(d.subjects(subject).exp.rt))*100;...
         };
     behavCheckTbl = cell2table(tmpTable);
     behavCheckTbl.Properties.VariableNames = tmpTableTitles;
     
-    if p.skip_check_pp
-        t.do_pp = 'y';
-    else
-        t.prompt = 'Continue to psychophys with this participant? y/n [y]: ';
-        t.do_pp = input(t.prompt,'s');
-        if isempty(t.do_pp); t.do_pp = 'y'; end
-        close all
-    end
-    
-    if t.do_pp == 'y'
+
         % check thresholds
         if p.plot_coh
             [t.coh_easy,t.coh_hard,~,t.psignifit_array] = coh_thresholding(d.subjects(subject).coh,figdir,'_1',subject,1);
@@ -406,6 +266,10 @@ for subject = 1:length(t.alldata) % loop through each subject
                 t.correct_thresh_hard = tmp2.Fit(1);
                 betterThresholdPlotting(tmp1, tmp2); clear tmp1 tmp2
                 export_fig(fullfile(figdir,strcat(num2str(subject),'_better_coh_1_sigmoid.jpeg')),'-transparent')
+%                 t.prompt = 'ok? y/n [y]: ';
+%                 t.continue = input(t.prompt,'s');
+%                 if isempty(t.continue); t.continue = 'y'; end
+%                 close all
                 % put together a table for quick checking
                 disp('check coherence threshold values')
                 tmpTableTitles = {'condition' 'coh_thresh_used' 'coh_thresh_matlab_jspsych_array_used' 'correctly_obtained_threshold' 'coh_thresh_matlab_array_generated' 'difference_with_same_array' 'difference_from_correct_threshold'};
@@ -534,73 +398,6 @@ for subject = 1:length(t.alldata) % loop through each subject
                 end
             end
         end
-        if p.plot_coh_ang
-            [t.coh_easy,t.coh_hard,~,t.psignifit_array] = coh_thresholding(d.subjects(subject).coh_ang,figdir,'_2',subject,1);
-            if p.check_coh_ang
-                [t.jscoh_easy,t.jscoh_hard,~,t.jscoh_psignifit_array] = coh_thresholding(t.coh_ang.data_array,figdir,'_thresholding_with_jsarray_2',subject,0,1);
-                close all
-                tmp1 = psychcurve(t.coh_ang.data_array,0.9);
-                t.correct_thresh_easy = tmp1.Fit(1);
-                tmp2 = psychcurve(t.coh_ang.data_array,0.7);
-                t.correct_thresh_hard = tmp2.Fit(1);
-                betterThresholdPlotting(tmp1, tmp2); clear tmp1 tmp2
-                export_fig(fullfile(figdir,strcat(num2str(subject),'_better_coh_2_sigmoid.jpeg')),'-transparent')
-                % put together a table for quick checking
-                disp('check updated threshold values')
-                tmpTableTitles = {'condition' 'coh_thresh_used' 'coh_thresh_matlab_jspsych_array_used' 'correctly_obtained_threshold' 'coh_thresh_matlab_array_generated' 'difference_with_same_array' 'difference_from_correct_threshold'};
-                tmpTable = {...
-                    'easy' ...
-                    t.updated_coherence_values(1) ...
-                    t.jscoh_easy ...
-                    t.coh_easy ...
-                    t.correct_thresh_easy ...
-                    t.updated_coherence_values(1)-t.jscoh_easy ...
-                    t.correct_thresh_hard-t.jscoh_easy;...
-                    'hard' ...
-                    t.updated_coherence_values(2) ...
-                    t.jscoh_hard ...
-                    t.coh_hard ...
-                    t.correct_thresh_hard ...
-                    t.updated_coherence_values(2)-t.jscoh_hard ...
-                    t.correct_thresh_hard-t.jscoh_hard;...
-                    };
-                tmpCheckTbl = cell2table(tmpTable);
-                tmpCheckTbl.Properties.VariableNames = tmpTableTitles;
-                disp(tmpCheckTbl)
-                d.subjects(subject).updated_coherence_vals_matlab_orig = [t.jscoh_easy,t.jscoh_hard];
-                d.subjects(subject).updated_coherence_vals_matlab_correct = [t.correct_thresh_easy,t.correct_thresh_hard];
-                if ~p.print_coh_ang
-                    t.prompt = 'Press enter to continue';
-                    input(t.prompt,'s');
-                else
-                    figure;
-                    vals = [d.subjects(subject).updated_coherence_values; d.subjects(subject).updated_coherence_vals_matlab_correct; d.subjects(subject).updated_coherence_vals_matlab_orig];
-                    bar(vals,'FaceColor',[0.0 0.502 0.502]);
-                    set(gca,'XTickLabel',{'python' 'matlab correct' 'matlab orig'});
-                    ylim([0, 1]);
-                    hold on
-                    for i = 1:size(vals,2)
-                        plot([0 1],[1 1]*vals(i,1),'--g')
-                        plot([0 1],[1 1]*vals(i,2),'--r')
-                    end
-                    hold off
-                    export_fig(fullfile(figdir,strcat(num2str(subject),'_coh_2_python_v_matlab.jpeg')),'-transparent')
-                end
-                % check the arrays
-                disp('check arrays')
-                disp('array used')
-                t.coh_ang.data_array
-                disp('array assembled by matlab')
-                t.psignifit_array
-                disp('array assembled by matlab from array used')
-                t.jscoh_psignifit_array
-                d.subjects(subject).updated_coh_array_check = t.coh_ang.data_array-t.jscoh_psignifit_array;
-                if ~p.print_coh_ang
-                    t.prompt = 'press enter to continue';
-                    input(t.prompt,'s');
-                end
-            end
-        end
         
         % put together a table for quick checking
         tmpTableTitles = {'exp_part' 'easy_threshold' 'hard_threshold'};
@@ -613,10 +410,7 @@ for subject = 1:length(t.alldata) % loop through each subject
             t.rule_values(2);...
             'match thresh (mean rt)' ...
             mean(t.match_summary(4,:)) ...
-            mean(t.match_summary(6,:));...
-            'coh thresh 2 (percent coh)' ...
-            t.updated_coherence_values(1)*100 ...
-            t.updated_coherence_values(2)*100;...
+            mean(t.match_summary(6,:))...
             };
         psychphysCheckTbl = cell2table(tmpTable);
         psychphysCheckTbl.Properties.VariableNames = tmpTableTitles;
@@ -625,20 +419,10 @@ for subject = 1:length(t.alldata) % loop through each subject
         disp(behavCheckTbl)
         disp(psychphysCheckTbl)
         
-        if p.skip_check_lba
-            t.do_lba = 'y';
-        else
-            t.prompt = 'Continue to process for LBA fit with this participant? y/n [y]: ';
-            t.do_lba = input(t.prompt,'s');
-            if isempty(t.do_lba); t.do_lba = 'y'; end
-            close all
-        end
-    else
-        t.do_lba = 'n';
-    end
-    d.subjects(subject).lba = t.do_lba;
+
     
 end; clear subject; % end subject loop for initial checking
 
-fprintf('saving as %s\n', p.save_file);
-save(p.save_file,'p','d'); % save all data to a .mat file
+% fprintf('saving as %s\n', p.save_file);
+% save(p.save_file,'p','d'); % save all data to a .mat file
+warning('not saving!!! see comment above this line')
